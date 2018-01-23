@@ -30,9 +30,23 @@ class CustomDataloader(object):
                 batch_size=self.batch_size,
                 shuffle=self.shuffle,
                 last_batch=self.last_batch)
-        for batch in batcher:
-            images, labels = self.convert(batch)
-            yield images, labels
+        # TODO: Multithreaded code should be quarantined in a safe place
+        import queue
+        import threading
+        q = queue.Queue()
+        def yield_batch_worker():
+            for batch in batcher:
+                images, labels = self.convert(batch)
+                q.put((images, labels))
+            q.put('finished')
+        t = threading.Thread(target=yield_batch_worker)
+        t.start()
+        while True:
+            result = q.get()
+            if result == 'finished':
+                break
+            yield result
+        t.join()
 
     def convert(self, batch):
         images = self.img_conv(batch)
