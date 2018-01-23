@@ -8,7 +8,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--result_dir', required=True, help='Output directory for images and model checkpoints')
 # Other options have default values
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. [default: 0.5]')
-parser.add_argument('--weight_decay', type=float, default=.0, help='Optimizer L2 weight decay [default: 0]')
+parser.add_argument('--weight_decay', type=float, default=.0, help='Optimizer L2 weight decay [default: .0]')
+parser.add_argument('--pt_loss', type=float, default=1.0, help='Multiplier for pull-away term loss [default: 1.0]')
 parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train for [default: 10]')
 
 options = vars(parser.parse_args())

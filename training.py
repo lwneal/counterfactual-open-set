@@ -13,9 +13,11 @@ import imutil
 from vector import gen_noise, clamp_to_unit_sphere
 from dataloader import FlexibleCustomDataloader
 
-np.random.seed(123)
-torch.manual_seed(123)
-torch.cuda.manual_seed(123)
+
+def seed(val=42):
+    np.random.seed(val)
+    torch.manual_seed(val)
+    torch.cuda.manual_seed(val)
 
 
 def log_sum_exp(inputs, dim=None, keepdim=False):
@@ -35,6 +37,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     image_size = options['image_size']
     latent_size = options['latent_size']
 
+    seed()
     fixed_noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
     fixed_noise = clamp_to_unit_sphere(fixed_noise)
 
@@ -68,7 +71,9 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         pt_loss = torch.sum((cosine * mask) ** 2) / (nsample * (nsample + 1))
         pt_loss /= (128 * 128)
 
-        errG = fm_loss + pt_loss
+        errG = fm_loss
+        if options['pt_loss'] != 0:
+            errG += options['pt_loss'] * pt_loss
 
         # Classify generated examples as "not fake"
         gen_logits = netD(gen_images)
