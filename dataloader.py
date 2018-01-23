@@ -33,7 +33,7 @@ class CustomDataloader(object):
         # TODO: Multithreaded code should be quarantined in a safe place
         import queue
         import threading
-        q = queue.Queue()
+        q = queue.Queue(maxsize=1)
         def yield_batch_worker():
             for batch in batcher:
                 images, labels = self.convert(batch)
