@@ -30,6 +30,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     netE = networks['encoder']
     netD = networks['discriminator']
     netG = networks['generator']
+    optimizerE = optimizers['encoder']
     optimizerD = optimizers['discriminator']
     optimizerG = optimizers['generator']
     result_dir = options['result_dir']
@@ -113,7 +114,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         optimizerD.step()
         ############################
 
-        # TODO: Encoder updates
+        ############################
+        # Encoder Update
+        ###########################
+        reconstructed = netG(netE(images))
+        errE = torch.mean((images - reconstructed) ** 2)
+        errE.backward()
+        optimizerE.step()
+        ###########################
 
         # Keep track of accuracy on positive-labeled examples for monitoring
         _, pred_idx = real_logits.max(1)
@@ -126,6 +134,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
             img = torch.cat([demo_fakes.data[:36]])
             filename = "{}/demo_{}.jpg".format(result_dir, int(time.time()))
             imutil.show(img, filename=filename, resize_to=(512,512))
+
+            print("Autoencoder:")
+            aac_before = images[:8]
+            aac_after = netG(netE(aac_before))
+            imutil.show(torch.cat((aac_before, aac_after)), save=False)
 
             bps = (i+1) / (time.time() - start_time)
             ed = errD.data[0]
@@ -142,5 +155,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
             print("log_prob_gen {:.3f}".format(log_prob_gen.mean().data[0]))
             print("pt_loss {:.3f}".format(pt_loss.data[0]))
             print("fm_loss {:.3f}".format(fm_loss.data[0]))
+            print("errE {:.3f}".format(errE.data[0]))
             print("Accuracy {}/{}".format(correct, total))
     return True

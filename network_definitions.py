@@ -85,7 +85,7 @@ class encoder32(nn.Module):
         x = self.conv9(x)
         x = self.bn9(x)
         x = nn.LeakyReLU(0.2, inplace=True)(x)
-
+        x = x.view(batch_size, -1)
         x = self.fc1(x)
         return x
 
