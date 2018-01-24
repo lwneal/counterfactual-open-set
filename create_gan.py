@@ -6,12 +6,9 @@ import sys
 def is_true(x):
     return not not x and x not in ['false', 'False', '0']
 
-# Dataset (input) and result_dir (output) must always be specified
 parser = argparse.ArgumentParser()
 parser.add_argument('--result_dir', required=True, help='Output directory for images and model checkpoints')
-parser.add_argument('--dataset', help='Input filename (must be in .dataset format)')
-
-# Other options have default values
+parser.add_argument('--dataset', required=True, help='Input filename (must be in .dataset format)')
 parser.add_argument('--latent_size', type=int, default=100, help='Size of the latent z vector [default: 100]')
 parser.add_argument('--image_size', type=int, default=32, help='Height / width of images [default: 32]')
 parser.add_argument('--batch_size', type=int, default=64, help='Batch size [default: 64]')
