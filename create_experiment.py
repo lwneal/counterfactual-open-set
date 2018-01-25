@@ -26,3 +26,7 @@ dataloader = FlexibleCustomDataloader(fold='train', **options)
 networks = build_networks(dataloader.num_classes, **options)
 optimizers = get_optimizers(networks, **options)
 save_options(options)
+
+# Use git ls-files to copy all files in the repository to the destination directory
+from repo import copy_repo
+copy_repo(options['result_dir'])
