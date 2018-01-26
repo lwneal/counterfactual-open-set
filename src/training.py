@@ -43,6 +43,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     fixed_noise = clamp_to_unit_sphere(fixed_noise)
 
     start_time = time.time()
+    seed(int(start_time))
     correct = 0
     total = 0
 
@@ -72,7 +73,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         pt_loss = torch.sum((cosine * mask) ** 2) / (nsample * (nsample + 1))
         pt_loss /= (128 * 128)
 
-        errG = fm_loss
+        errG = fm_loss * options['fm_loss']
         if options['pt_loss'] != 0:
             errG += options['pt_loss'] * pt_loss
 
