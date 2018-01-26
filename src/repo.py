@@ -19,6 +19,6 @@ def copy_repo(target_dir):
     for src_filename in filenames:
         dst_filename = os.path.join(target_dir, src_filename)
         mkdirp(os.path.dirname(dst_filename))
-        shutil.copyfile(src_filename, dst_filename)
+        shutil.copy2(src_filename, dst_filename)
     print('Copied {} files to {}'.format(len(filenames), target_dir))
 
