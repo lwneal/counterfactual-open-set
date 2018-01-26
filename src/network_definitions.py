@@ -42,7 +42,8 @@ class encoder32(nn.Module):
         self.bn8 = nn.BatchNorm2d(128)
         self.bn9 = nn.BatchNorm2d(128)
 
-        self.fc1 = nn.Linear(128*4*4, latent_size)
+        self.conv10 = nn.Conv2d(   128,      int(latent_size / 16), 3, stride=1, padding=1)
+        #self.fc1 = nn.Linear(128*4*4, latent_size)
         self.dr1 = nn.Dropout2d(0.2)
         self.dr2 = nn.Dropout2d(0.2)
         self.dr3 = nn.Dropout2d(0.2)
@@ -85,19 +86,22 @@ class encoder32(nn.Module):
         x = self.conv9(x)
         x = self.bn9(x)
         x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = self.conv10(x)
         x = x.view(batch_size, -1)
-        x = self.fc1(x)
+        #x = self.fc1(x)
         return x
 
 
 class generator32(nn.Module):
     def __init__(self, latent_size=100, batch_size=64, **kwargs):
         super(self.__class__, self).__init__()
-        self.fc1 = nn.Linear(latent_size, 4*4*512)
+        self.latent_size = latent_size
+        #self.fc1 = nn.Linear(latent_size, 4*4*512)
+        self.conv0 = nn.ConvTranspose2d(   int(latent_size/16),      512, 3, stride=1, padding=1, bias=False)
         self.conv1 = nn.ConvTranspose2d(   512,      256, 4, stride=2, padding=1, bias=False)
         self.conv2 = nn.ConvTranspose2d(   256,      128, 4, stride=2, padding=1, bias=False)
-        self.conv3 = nn.ConvTranspose2d(   128,        3, 4, stride=2, padding=1, bias=False)
-        self.bn0 = nn.BatchNorm1d(4*4*512)
+        self.conv3 = nn.ConvTranspose2d(   128,        3, 4, stride=2, padding=1)
+        self.bn0 = nn.BatchNorm2d(512)
         self.bn1 = nn.BatchNorm2d(256)
         self.bn2 = nn.BatchNorm2d(128)
 
@@ -117,10 +121,11 @@ class generator32(nn.Module):
         nn.weight_norm(nn.Deconv2DLayer(gen_layers[-1], (args.batch_size,3,32,32), (5,5), W=Normal(0.05), nonlinearity=T.tanh), train_g=True, init_stdv=0.1) # 16 -> 32
         """
         batch_size = x.shape[0]
-        x = self.fc1(x)
+        x = x.resize(batch_size, int(self.latent_size / 16), 4, 4)
+        #x = self.fc1(x)
+        x = self.conv0(x)
         x = nn.ReLU(inplace=True)(x)
         x = self.bn0(x)
-        x = x.resize(batch_size, 512, 4, 4)
         # 512 x 4 x 4
         x = self.conv1(x)
         x = nn.ReLU(inplace=True)(x)
