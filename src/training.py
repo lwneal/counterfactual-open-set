@@ -116,12 +116,15 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ############################
 
         ############################
-        # Encoder Update
+        # Autoencoder Update
         ###########################
+        netE.zero_grad()
+        netG.zero_grad()
         reconstructed = netG(netE(images))
-        errE = torch.mean((images - reconstructed) ** 2)
+        errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
         optimizerE.step()
+        optimizerG.step()
         ###########################
 
         # Keep track of accuracy on positive-labeled examples for monitoring
