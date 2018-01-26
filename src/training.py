@@ -137,12 +137,13 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
             demo_fakes = netG(fixed_noise)
             img = torch.cat([demo_fakes.data[:36]])
             filename = "{}/demo_{}.jpg".format(result_dir, int(time.time()))
-            imutil.show(img, filename=filename, resize_to=(512,512))
+            print("Generated Data:")
+            imutil.show(img, filename=filename, resize_to=(256,256))
 
-            print("Autoencoder:")
+            print("Autoencoder Reconstructions:")
             aac_before = images[:8]
             aac_after = netG(netE(aac_before))
-            imutil.show(torch.cat((aac_before, aac_after)), save=False)
+            imutil.show(torch.cat((aac_before, aac_after)), resize_to=(256,256), save=False)
 
             bps = (i+1) / (time.time() - start_time)
             ed = errD.data[0]
