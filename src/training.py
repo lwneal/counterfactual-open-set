@@ -52,49 +52,12 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         labels = Variable(class_labels)
 
         ############################
-        # Generator Updates
-        ############################
-        netG.zero_grad()
-        z = gen_noise(batch_size, latent_size)
-        z = Variable(z).cuda()
-        gen_images = netG(z)
-        
-        # Feature Matching: Average of one batch of real vs. generated
-        features_real = netD(images, return_features=True)
-        features_gen = netD(gen_images, return_features=True)
-        fm_loss = torch.mean((features_real.mean(0) - features_gen.mean(0)) ** 2)
-
-        # Pull-away term from https://github.com/kimiyoung/ssl_bad_gan
-        nsample = features_gen.size(0)
-        denom = features_gen.norm(dim=0).expand_as(features_gen)
-        gen_feat_norm = features_gen / denom
-        cosine = torch.mm(features_gen, features_gen.t())
-        mask = Variable((torch.ones(cosine.size()) - torch.diag(torch.ones(nsample))).cuda())
-        pt_loss = torch.sum((cosine * mask) ** 2) / (nsample * (nsample + 1))
-        pt_loss /= (128 * 128)
-
-        errG = fm_loss * options['fm_loss']
-        if options['pt_loss'] != 0:
-            errG += options['pt_loss'] * pt_loss
-
-        # Classify generated examples as "not fake"
-        gen_logits = netD(gen_images)
-        augmented_logits = F.pad(-gen_logits, pad=(0,1))
-        log_prob_gen = F.log_softmax(augmented_logits, dim=1)[:, -1]
-        errG += -log_prob_gen.mean()
-
-        errG.backward()
-        optimizerG.step()
-        ###########################
-
-        ############################
         # Discriminator Updates
         ###########################
         netD.zero_grad()
 
-        # Classify generated examples as "fake" (ie the K+1th "open" class)
-        z = gen_noise(batch_size, latent_size)
-        z = Variable(z).cuda()
+        # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
+        z = netE(images)
         fake_images = netG(z).detach()
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
@@ -108,7 +71,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         augmented_logits = F.pad(real_logits, pad=(0,1))
         augmented_labels = F.pad(positive_labels, pad=(0,1))
         log_prob_real = F.log_softmax(augmented_logits, dim=1) * augmented_labels
-        #log_prob_real = F.log_softmax(augmented_logits, dim=1)[:, 0]
         errC = -log_prob_real.mean()
         errC.backward()
 
@@ -120,14 +82,27 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netE.zero_grad()
         netG.zero_grad()
+
+        # Minimize reconstruction loss
         reconstructed = netG(netE(images))
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
+
+        # Also minimize fakeness
+        z = netE(images)
+        fake_images = netG(z)
+        fake_logits = netD(fake_images)
+        augmented_logits = F.pad(fake_logits, pad=(0,1))
+        log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
+        errG = -log_prob_not_fake.mean()  * .001
+        errG.backward()
+
         optimizerE.step()
         optimizerG.step()
         ###########################
 
         # Keep track of accuracy on positive-labeled examples for monitoring
+        real_logits = netD(images)
         _, pred_idx = real_logits.max(1)
         _, label_idx = labels.max(1)
         correct += sum(pred_idx == label_idx).data.cpu().numpy()[0]
@@ -147,7 +122,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
             bps = (i+1) / (time.time() - start_time)
             ed = errD.data[0]
-            eg = errG.data[0]
+            eg = 0#errG.data[0]
             ec = errC.data[0]
             acc = correct / max(total, 1)
             msg = '[{}][{}/{}] D:{:.3f} G:{:.3f} C:{:.3f} Acc. {:.3f} {:.3f} batch/sec'
@@ -155,11 +130,4 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                   epoch, i+1, len(dataloader),
                   ed, eg, ec, acc, bps)
             print(msg)
-            print("log_prob_real {:.3f}".format(log_prob_real.mean().data[0]))
-            print("log_prob_fake {:.3f}".format(log_prob_fake.mean().data[0]))
-            print("log_prob_gen {:.3f}".format(log_prob_gen.mean().data[0]))
-            print("pt_loss {:.3f}".format(pt_loss.data[0]))
-            print("fm_loss {:.3f}".format(fm_loss.data[0]))
-            print("errE {:.3f}".format(errE.data[0]))
-            print("Accuracy {}/{}".format(correct, total))
     return True
