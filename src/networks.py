@@ -57,7 +57,8 @@ def get_optimizers(networks, lr=.0001, beta1=.5, beta2=.999, weight_decay=.0, **
 
 
 def get_pth_by_epoch(result_dir, name, epoch=None):
-    checkpoint_path = os.path.join(result_dir, 'checkpoints')
+    checkpoint_path = os.path.join(result_dir, 'checkpoints/')
+    ensure_directory_exists(checkpoint_path)
     files = os.listdir(checkpoint_path)
     suffix = '.pth'
     if epoch is not None:
