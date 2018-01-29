@@ -1,0 +1,9 @@
+{
+  "batch_size": 64,
+  "dataset": "/mnt/data/svhn-04.dataset",
+  "delete_background": false,
+  "hypothesis": "A large SVHN latent space should look interesting",
+  "image_size": 32,
+  "latent_size": 1024,
+  "random_horizontal_flip": true
+}
