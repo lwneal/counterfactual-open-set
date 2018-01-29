@@ -25,13 +25,23 @@ def save_options(options):
 
 def load_options(options):
     print("Resuming existing experiment at {} with options:".format(options['result_dir']))
-    old_opts = json.load(open(os.path.join(options['result_dir'], 'params.json')))
+
+    param_path = get_param_path(options['result_dir'])
+    old_opts = json.load(open(param_path))
 
     options.update(old_opts)
     options['result_dir'] = os.path.expanduser(options['result_dir'])
 
     pprint(options)
     return options
+
+
+def get_param_path(result_dir):
+    if os.path.exists(os.path.join(result_dir, 'params.json')):
+        return os.path.join(result_dir, 'params.json')
+    elif os.path.exists(os.path.join(result_dir, 'default_params.json')):
+        return os.path.join(result_dir, 'default_params.json')
+    raise ValueError("Could not find {}/params.json".format(result_dir))
 
 
 def get_current_epoch(result_dir):
