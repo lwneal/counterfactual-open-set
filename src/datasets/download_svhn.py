@@ -6,11 +6,7 @@ import json
 from subprocess import check_output
 from scipy import io as sio
 from tqdm import tqdm
-
 from PIL import Image
-import matplotlib
-matplotlib.use('Agg')
-
 
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
