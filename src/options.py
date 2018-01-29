@@ -45,7 +45,8 @@ def get_param_path(result_dir):
 
 
 def get_current_epoch(result_dir):
-    filenames = os.listdir(os.path.expanduser(result_dir))
+    checkpoints_path = os.path.join(result_dir, 'checkpoints')
+    filenames = os.listdir(checkpoints_path)
     model_filenames = [f for f in filenames if f.endswith('.pth')]
     if not model_filenames:
         return 0

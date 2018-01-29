@@ -3,6 +3,7 @@ import os
 import tempfile
 import time
 import subprocess
+import pathlib
 from distutils import spawn
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
@@ -144,6 +145,7 @@ def show(
         filename = tempfile.NamedTemporaryFile(suffix='.jpg').name
 
     # Write the file itself
+    ensure_directory_exists(filename)
     with open(filename, 'wb') as fp:
         fp.write(encode_jpg(pixels))
         fp.flush()
@@ -158,7 +160,16 @@ def show(
 
     # Output JPG files can be collected into a video with ffmpeg -i *.jpg
     if video_filename:
+        ensure_directory_exists(video_filename)
         open(video_filename, 'ab').write(encode_jpg(pixels))
+
+
+def ensure_directory_exists(filename):
+    # Assume whatever comes after the last / is the filename
+    tokens = filename.split('/')[:-1]
+    # Perform a mkdir -p on the rest of the path
+    path = '/'.join(tokens)
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def encode_video(video_filename):

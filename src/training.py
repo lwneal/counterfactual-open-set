@@ -111,7 +111,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         if i % 100 == 0:
             demo_fakes = netG(fixed_noise)
             img = torch.cat([demo_fakes.data[:36]])
-            filename = "{}/demo_{}.jpg".format(result_dir, int(time.time()))
+            filename = "{}/images/demo_{}.jpg".format(result_dir, int(time.time()))
             print("Generated Data:")
             imutil.show(img, filename=filename, resize_to=(256,256))
 
