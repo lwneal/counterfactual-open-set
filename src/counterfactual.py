@@ -119,12 +119,13 @@ def generate_images_for_class(networks, start_images, target_class, **options):
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
         distance_loss = torch.sum((z - z_0) ** 2)
-        print("Counterfactual loss {}, distance loss {}".format(
-            cf_loss.data[0], distance_loss.data[0]))
+        print("Target {} iter {} cf loss {:.4f}, distance loss {:.4f}".format(
+            target_class, i, cf_loss.data[0], distance_loss.data[0]))
         
         total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss, retain_graph=True)[0]
         z -= dc_dz * speed
+        del dc_dz  # To avoid cuda memory leak
 
     # TODO: Augment the counterfactual images with the start images
     #torch.cat([start_images, images])
