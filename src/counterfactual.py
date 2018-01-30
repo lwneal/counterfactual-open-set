@@ -60,14 +60,19 @@ def generate_counterfactual(networks, dataloader, **options):
     result_dir = options['result_dir']
 
     K = dataloader.num_classes
+    cf_count = 10
+
+    # Start with randomly-selected images from the dataloader
+    start_images, _ = dataloader.get_batch()
+    start_images = start_images[:cf_count]  # assume batch_size >= cf_count
 
     batches = []
-    for class_idx in range(K):
-        img_batch = generate_images_for_class(networks, dataloader, class_idx, **options)
+    for target_class in range(K + 1):
+        img_batch = generate_images_for_class(networks, start_images, target_class, **options)
         batches.append(img_batch)
 
     images = []
-    for i in range(K):
+    for i in range(cf_count):
         for batch in batches:
             images.append(batch[i])
 
@@ -86,7 +91,7 @@ def generate_counterfactual(networks, dataloader, **options):
     return images
 
 
-def generate_images_for_class(networks, dataloader, class_idx, **options):
+def generate_images_for_class(networks, start_images, target_class, **options):
     netG = networks['generator']
     netD = networks['discriminator']
     netE = networks['encoder']
@@ -95,18 +100,12 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
     speed = options['cf_speed']
     max_iters = options['cf_max_iters']
 
-    # Start with K randomly-selected images from the dataloader
-    K = dataloader.num_classes
-    start_images, _ = dataloader.get_batch()
-    start_images = start_images[:K]  # Assume K < batch_size
-
+    # Start with the original batch of images, encoded
     z = netE(start_images)
 
     # Move them so their labels match target_label
-    target_label = torch.LongTensor(K + 1)
-    target_label[:-1] = class_idx
-    target_label[-1] = K + 1  # Last column: generate open set examples
-    target_label = Variable(target_label).cuda()
+    target_label = Variable(torch.LongTensor(len(z))).cuda()
+    target_label[:] = target_class
     z_0 = None
 
     for i in range(max_iters):
@@ -124,7 +123,7 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
             pred_confidence = pred_confidences[0]
             #predicted_class_name = dataloader.lab_conv.labels[predicted_class]
             print("Iter {} item {} Class: {} ({:.3f} confidence). Target class {}".format(
-                i, j, predicted_class, pred_confidence, class_idx))
+                i, j, predicted_class, pred_confidence, target_class))
         
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
         distance_loss = torch.sum((z - z_0) ** 2)
