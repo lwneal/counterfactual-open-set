@@ -115,12 +115,12 @@ def generate_images_for_class(networks, start_images, target_class, **options):
         logits = netD(images)
         augmented_logits = F.pad(logits, pad=(0,1))
 
-        for j in range(K):
+        for j in range(len(z)):
             preds = softmax(augmented_logits, dim=1)
-            pred_classes = to_np(preds.max(1)[1])
-            predicted_class = pred_classes[0]
+            pred_classes = to_np(preds.max(1)[0])
+            predicted_class = pred_classes[j]
             pred_confidences = to_np(preds.max(1)[0])
-            pred_confidence = pred_confidences[0]
+            pred_confidence = pred_confidences[j]
             #predicted_class_name = dataloader.lab_conv.labels[predicted_class]
             print("Iter {} item {} Class: {} ({:.3f} confidence). Target class {}".format(
                 i, j, predicted_class, pred_confidence, target_class))
@@ -133,9 +133,6 @@ def generate_images_for_class(networks, start_images, target_class, **options):
         total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss, retain_graph=True)[0]
         z -= dc_dz * speed
-        #z = clamp_to_unit_sphere(z)
-        if all(pred_classes == class_idx) and all(pred_confidences > 0.75):
-            break
 
     # TODO: Augment the counterfactual images with the start images
     #torch.cat([start_images, images])
