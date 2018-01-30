@@ -110,19 +110,21 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         if i % 100 == 0:
             demo_fakes = netG(fixed_noise)
-            img = torch.cat([demo_fakes.data[:36]])
-            filename = "{}/images/demo_{}.jpg".format(result_dir, int(time.time()))
-            print("Generated Data:")
+            img = demo_fakes.data[:16]
+            filename = "{}/images/samples_{}.jpg".format(result_dir, int(time.time()))
+            print("Generator Samples:")
             imutil.show(img, filename=filename, resize_to=(256,256))
 
             print("Autoencoder Reconstructions:")
             aac_before = images[:8]
             aac_after = netG(netE(aac_before))
-            imutil.show(torch.cat((aac_before, aac_after)), resize_to=(256,256), save=False)
+            filename = "{}/images/reconstruction_{}.jpg".format(result_dir, int(time.time()))
+            img = torch.cat((aac_before, aac_after))
+            imutil.show(img, filename=filename, resize_to=(256,256))
 
             bps = (i+1) / (time.time() - start_time)
             ed = errD.data[0]
-            eg = 0#errG.data[0]
+            eg = errG.data[0]
             ec = errC.data[0]
             acc = correct / max(total, 1)
             msg = '[{}][{}/{}] D:{:.3f} G:{:.3f} C:{:.3f} Acc. {:.3f} {:.3f} batch/sec'
