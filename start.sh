@@ -6,4 +6,4 @@ pip install -r requirements.txt
 #python src/datasets/download_svhn.py
 python src/datasets/download_mnist.py
 
-python src/train_gan.py --result_dir . --epochs 10
+python src/train_gan.py --result_dir . --epochs 10 | tee stdout.txt
