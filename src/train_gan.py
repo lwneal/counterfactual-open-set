@@ -11,6 +11,7 @@ parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. [d
 parser.add_argument('--weight_decay', type=float, default=.0, help='Optimizer L2 weight decay [default: .0]')
 parser.add_argument('--pt_loss', type=float, default=1.0, help='Multiplier for pull-away term loss [default: 1.0]')
 parser.add_argument('--fm_loss', type=float, default=1.0, help='Multiplier for feature-matching loss [default: 1.0]')
+parser.add_argument('--generator_weight', type=float, default=0.1, help='Multiplier for generator adversarial loss [default: 0.1]')
 parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train for [default: 10]')
 
 options = vars(parser.parse_args())

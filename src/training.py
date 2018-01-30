@@ -94,7 +94,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
-        errG = -log_prob_not_fake.mean()  * .001
+        errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
 
         optimizerE.step()
