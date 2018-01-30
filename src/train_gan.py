@@ -10,7 +10,7 @@ parser.add_argument('--weight_decay', type=float, default=.0, help='Optimizer L2
 parser.add_argument('--generator_weight', type=float, default=0.01, help='Multiplier for generator adversarial loss [default: 0.01]')
 parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train for [default: 10]')
 parser.add_argument('--cf_speed', type=float, default=.0001, help='Counterfactual optimization rate [default: .0001]')
-parser.add_argument('--cf_max_iters', type=int, default=100, help='Counterfactual gradient descent steps [default: 100]')
+parser.add_argument('--cf_max_iters', type=int, default=10, help='Counterfactual gradient descent steps [default: 10]')
 
 options = vars(parser.parse_args())
 
