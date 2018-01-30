@@ -88,15 +88,20 @@ def generate_counterfactual(networks, dataloader, **options):
 def generate_images_for_class(networks, dataloader, class_idx, **options):
     netG = networks['generator']
     netD = networks['discriminator']
+    netE = networks['encoder']
     result_dir = options['result_dir']
     latent_size = options['latent_size']
     speed = options['cf_speed']
     max_iters = options['cf_max_iters']
 
-    # Start with K random points
+    # Start with K randomly-selected images from the dataloader
     K = dataloader.num_classes
-    z = gen_noise(K, latent_size)
-    z = Variable(z, requires_grad=True).cuda()
+    start_images, _ = dataloader.get_batch()
+    start_images = start_images[:K]
+
+    #z = gen_noise(K, latent_size)
+    z = netE(start_images)
+    #z = Variable(z, requires_grad=True).cuda()
 
     # Move them so their labels match target_label
     target_label = torch.LongTensor(K)
@@ -129,6 +134,10 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
         #z = clamp_to_unit_sphere(z)
         if all(pred_classes == class_idx) and all(pred_confidences > 0.75):
             break
+
+    # TODO: Augment the counterfactual images with the start images
+    #torch.cat([start_images, images])
+
     return images.data.cpu().numpy()
 
 
