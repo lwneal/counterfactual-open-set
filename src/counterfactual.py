@@ -54,10 +54,8 @@ def rejection_sample(networks, dataloader, **options):
 # Generates 'counterfactual' images for each class, by gradient descent of the class
 def generate_counterfactual(networks, dataloader, **options):
     # ISSUE: Unexpected BatchNorm behavior causes bad output if .eval() is set
-    """
     for net in networks:
         networks[net].eval()
-    """
     result_dir = options['result_dir']
 
     K = dataloader.num_classes
@@ -104,8 +102,11 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
     target_label = torch.LongTensor(K)
     target_label[:] = class_idx
     target_label = Variable(target_label).cuda()
+    z_0 = None
 
     for i in range(max_iters):
+        if z_0 is None:
+            z_0 = z.clone()
         images = netG(z)
         net_y = netD(images)
         preds = softmax(net_y, dim=1)
@@ -119,8 +120,11 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
             predicted_class_name, pred_confidence, class_idx))
 
         cf_loss = nll_loss(log_softmax(net_y, dim=1), target_label)
-
-        dc_dz = autograd.grad(cf_loss, z, cf_loss, retain_graph=True)[0]
+        distance_loss = torch.sum((z - z_0) ** 2)
+        print("Counterfactual loss {}, distance loss {}".format(cf_loss, distance_loss))
+        
+        total_loss = cf_loss + distance_loss
+        dc_dz = autograd.grad(total_loss, z, total_loss, retain_graph=True)[0]
         z -= dc_dz * speed
         #z = clamp_to_unit_sphere(z)
         if all(pred_classes == class_idx) and all(pred_confidences > 0.75):
