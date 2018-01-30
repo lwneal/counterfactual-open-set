@@ -5,6 +5,7 @@ import torch
 import numpy as np
 from torch import autograd
 from torch.autograd import Variable
+from torch.nn import functional as F
 from torch.nn.functional import softmax, sigmoid, log_softmax
 from torch.nn.functional import nll_loss, cross_entropy
 from vector import gen_noise, clamp_to_unit_sphere
@@ -97,15 +98,14 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
     # Start with K randomly-selected images from the dataloader
     K = dataloader.num_classes
     start_images, _ = dataloader.get_batch()
-    start_images = start_images[:K]
+    start_images = start_images[:K]  # Assume K < batch_size
 
-    #z = gen_noise(K, latent_size)
     z = netE(start_images)
-    #z = Variable(z, requires_grad=True).cuda()
 
     # Move them so their labels match target_label
-    target_label = torch.LongTensor(K)
-    target_label[:] = class_idx
+    target_label = torch.LongTensor(K + 1)
+    target_label[:-1] = class_idx
+    target_label[-1] = K + 1  # Last column: generate open set examples
     target_label = Variable(target_label).cuda()
     z_0 = None
 
@@ -113,20 +113,23 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
         if z_0 is None:
             z_0 = z.clone()
         images = netG(z)
-        net_y = netD(images)
-        preds = softmax(net_y, dim=1)
+        logits = netD(images)
+        augmented_logits = F.pad(logits, pad=(0,1))
 
-        pred_classes = to_np(preds.max(1)[1])
-        predicted_class = pred_classes[0]
-        pred_confidences = to_np(preds.max(1)[0])
-        pred_confidence = pred_confidences[0]
-        predicted_class_name = dataloader.lab_conv.labels[predicted_class]
-        print("Class: {} ({:.3f} confidence). Target class {}".format(
-            predicted_class_name, pred_confidence, class_idx))
-
-        cf_loss = nll_loss(log_softmax(net_y, dim=1), target_label)
+        for j in range(K):
+            preds = softmax(augmented_logits, dim=1)
+            pred_classes = to_np(preds.max(1)[1])
+            predicted_class = pred_classes[0]
+            pred_confidences = to_np(preds.max(1)[0])
+            pred_confidence = pred_confidences[0]
+            #predicted_class_name = dataloader.lab_conv.labels[predicted_class]
+            print("Iter {} item {} Class: {} ({:.3f} confidence). Target class {}".format(
+                i, j, predicted_class, pred_confidence, class_idx))
+        
+        cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
         distance_loss = torch.sum((z - z_0) ** 2)
-        print("Counterfactual loss {}, distance loss {}".format(cf_loss, distance_loss))
+        print("Counterfactual loss {}, distance loss {}".format(
+            cf_loss.data[0], distance_loss.data[0]))
         
         total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss, retain_graph=True)[0]
