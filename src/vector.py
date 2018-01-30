@@ -4,7 +4,7 @@ import torch
 def gen_noise(K, latent_size):
     noise = torch.zeros((K, latent_size))
     noise.normal_(0, 1)
-    noise = clamp_to_unit_sphere(noise)
+    #noise = clamp_to_unit_sphere(noise)
     return noise
 
 

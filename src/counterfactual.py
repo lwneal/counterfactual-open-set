@@ -81,7 +81,7 @@ def generate_counterfactual(networks, dataloader, **options):
     np.save(trajectory_filename, images)
 
     # Save the images in jpg format to display to the user
-    name = 'counterfactual_/{}.jpg'.format(int(time.time()))
+    name = 'counterfactual_{}.jpg'.format(int(time.time()))
     jpg_filename = os.path.join(result_dir, 'images', name)
     imutil.show(images, filename=jpg_filename)
     return images
@@ -122,7 +122,7 @@ def generate_images_for_class(networks, dataloader, class_idx, **options):
 
         dc_dz = autograd.grad(cf_loss, z, cf_loss, retain_graph=True)[0]
         z -= dc_dz * speed
-        z = clamp_to_unit_sphere(z)
+        #z = clamp_to_unit_sphere(z)
         if all(pred_classes == class_idx) and all(pred_confidences > 0.75):
             break
     return images.data.cpu().numpy()

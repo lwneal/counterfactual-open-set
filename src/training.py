@@ -40,7 +40,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
     seed()
     fixed_noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-    fixed_noise = clamp_to_unit_sphere(fixed_noise)
+    #fixed_noise = clamp_to_unit_sphere(fixed_noise)
 
     start_time = time.time()
     seed(int(start_time))
