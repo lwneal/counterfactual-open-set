@@ -81,7 +81,9 @@ def generate_counterfactual(networks, dataloader, **options):
     np.save(trajectory_filename, images)
 
     # Save the images in jpg format to display to the user
-    imutil.show(images, filename=video_filename.replace('.mjpeg', '.jpg'))
+    name = 'counterfactual_/{}.jpg'.format(int(time.time()))
+    jpg_filename = os.path.join(result_dir, 'images', name)
+    imutil.show(images, filename=jpg_filename)
     return images
 
 
