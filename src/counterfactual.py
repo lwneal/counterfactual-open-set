@@ -55,12 +55,15 @@ def rejection_sample(networks, dataloader, **options):
 # Generates 'counterfactual' images for each class, by gradient descent of the class
 def generate_counterfactual(networks, dataloader, **options):
     # ISSUE: Unexpected BatchNorm behavior causes bad output if .eval() is set
+    """
     for net in networks:
         networks[net].eval()
+    """
     result_dir = options['result_dir']
 
     K = dataloader.num_classes
-    cf_count = 10
+    # Make the batch size large enough to form a square grid
+    cf_count = K + 1
 
     # Start with randomly-selected images from the dataloader
     start_images, _ = dataloader.get_batch()
@@ -111,20 +114,9 @@ def generate_images_for_class(networks, start_images, target_class, **options):
     for i in range(max_iters):
         if z_0 is None:
             z_0 = z.clone()
-        images = netG(z)
-        logits = netD(images)
+        logits = netD(netG(z))
         augmented_logits = F.pad(logits, pad=(0,1))
 
-        for j in range(len(z)):
-            preds = softmax(augmented_logits, dim=1)
-            pred_classes = to_np(preds.max(1)[0])
-            predicted_class = pred_classes[j]
-            pred_confidences = to_np(preds.max(1)[0])
-            pred_confidence = pred_confidences[j]
-            #predicted_class_name = dataloader.lab_conv.labels[predicted_class]
-            print("Iter {} item {} Class: {} ({:.3f} confidence). Target class {}".format(
-                i, j, predicted_class, pred_confidence, target_class))
-        
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
         distance_loss = torch.sum((z - z_0) ** 2)
         print("Counterfactual loss {}, distance loss {}".format(
@@ -136,7 +128,7 @@ def generate_images_for_class(networks, start_images, target_class, **options):
 
     # TODO: Augment the counterfactual images with the start images
     #torch.cat([start_images, images])
-
+    images = netG(z)
     return images.data.cpu().numpy()
 
 
