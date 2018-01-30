@@ -123,9 +123,9 @@ def generate_images_for_class(networks, start_images, target_class, **options):
             target_class, i, cf_loss.data[0], distance_loss.data[0]))
         
         total_loss = cf_loss + distance_loss
-        dc_dz = autograd.grad(total_loss, z, total_loss, retain_graph=True)[0]
-        z -= dc_dz * speed
-        del dc_dz  # To avoid cuda memory leak
+        # TODO: Deal with memory leak here
+        # May be the same issue as https://github.com/pytorch/pytorch/issues/4661
+        dc_dz = autograd.grad(total_loss, z, total_loss)[0]
 
     # TODO: Augment the counterfactual images with the start images
     #torch.cat([start_images, images])
