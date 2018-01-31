@@ -30,7 +30,10 @@ class CustomDataloader(object):
                 batch_size=self.batch_size,
                 shuffle=self.shuffle,
                 last_batch=self.last_batch)
-        # TODO: Multithreaded code should be quarantined in a safe place
+        """
+        # TODO: Multithreading improves throughput by 10-20%
+        # It must be implemented safely, however- not like this
+        # In particular, ensure no deadlocks, interactivity and logging should still work
         import queue
         import threading
         q = queue.Queue(maxsize=1)
@@ -47,6 +50,10 @@ class CustomDataloader(object):
                 break
             yield result
         t.join()
+        """
+        for batch in batcher:
+            images, labels = self.convert(batch)
+            yield images, labels
 
     def convert(self, batch):
         images = self.img_conv(batch)
