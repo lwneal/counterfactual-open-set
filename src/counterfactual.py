@@ -109,14 +109,11 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     # Move them so their labels match target_label
     target_label = Variable(torch.LongTensor(cf_batch_size)).cuda()
     target_label[:] = target_class
-    logits_original = None
 
     for i in range(max_iters):
         z = to_torch(z_value, requires_grad=True)
         z_0 = to_torch(z0_value)
         logits = netD(netG(z))
-        if logits_original is None:
-            logits_original = logits
         augmented_logits = F.pad(logits, pad=(0,1))
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
@@ -124,7 +121,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         print("Target {} iter {} cf loss {:.4f}, distance loss {:.4f}".format(
             target_class, i, cf_loss.data[0], distance_loss.data[0]))
         
-        total_loss = cf_loss #+ distance_loss
+        total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss)[0]
         z = z - dc_dz * speed
 
@@ -134,14 +131,6 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         z_value = to_np(z)
         del z
     z = to_torch(z_value)
-
-    from imutil import show
-    print(softmax(logits_original))
-    print(softmax(logits))
-    show(netG(z_0))
-    show(netG(z))
-    show(netG(z) - netG(z_0))
-    import pdb; pdb.set_trace()
 
     images = netG(z)
     return images.data.cpu().numpy()
