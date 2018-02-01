@@ -2,8 +2,9 @@
 
 pip install -r requirements.txt
 
-# TODO: Download just the correct dataset for this experiment
-python src/datasets/download_svhn.py
+if [ ! -f /mnt/data/svhn.dataset ]; then
+    python src/datasets/download_svhn.py
+fi
 #python src/datasets/download_mnist.py
 #python src/datasets/download_celeba.py
 #python src/datasets/download_oxford102.py
