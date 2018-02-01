@@ -154,7 +154,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
             is_negative = 1 - is_positive
             fake_log_likelihood = F.log_softmax(augmented_logits, dim=1)[:,-1] * is_negative
             real_log_likelihood = (F.log_softmax(augmented_logits, dim=1) * augmented_positive_labels).sum(dim=1)
-            import pdb; pdb.set_trace()
 
         optimizerC.step()
         ############################
