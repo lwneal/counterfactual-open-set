@@ -18,8 +18,8 @@ def to_np(v):
 
 # Returns 1 for items that are known, 0 for unknown
 def predict_openset(networks, images, threshold=0.):
-    netD = networks['discriminator']
-    preds = netD(images)
+    netC = networks['classifier']
+    preds = netC(images)
     maxval, _ = preds.max(dim=1) 
     return maxval > threshold
 
@@ -28,7 +28,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
     for net in networks.values():
         net.eval()
     netG = networks['generator']
-    netD = networks['discriminator']
+    netC = networks['classifier']
     result_dir = options['result_dir']
     image_size = options['image_size']
     latent_size = options['latent_size']
@@ -39,7 +39,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
     for images, labels in dataloader:
         images = Variable(images, volatile=True)
         # Predict a classification among known classes
-        net_y = netD(images)
+        net_y = netC(images)
         class_predictions = softmax(net_y, dim=1)
         
         # Also predict whether each example belongs to any class at all
@@ -149,14 +149,14 @@ def save_plot(plot, title, **options):
     
 
 def get_openset_scores(dataloader, networks):
-    netD = networks['discriminator']
+    netC = networks['classifier']
 
     # The implicit K+1th class (the open set class) is computed
     #  by assuming an extra linear output with constant value 0
     discriminator_scores = []
     for i, (images, labels) in enumerate(dataloader):
         images = Variable(images, volatile=True)
-        preds = netD(images)
+        preds = netC(images)
         z = torch.exp(preds).sum(dim=1)
         prob_known = z / (z + 1)
         prob_unknown = 1 - prob_known
