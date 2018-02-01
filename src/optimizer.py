@@ -124,16 +124,20 @@ def get_all_info(fold, metric, dataset):
         if not epochs:
             #print("no epochs")
             continue
-        epoch = epochs[-1]
-        results = get_results(result_dir, epoch)
-        if not results:
+        best_epoch, best_results = None, None
+        for epoch in epochs:
+            results = get_results(result_dir, epoch)
+            if not results:
+                continue
+            if fold not in results:
+                continue
+            if best_results is None or results[fold][metric] > best_results[fold][metric]:
+                best_epoch = epoch
+                best_results = results
+        if best_epoch is None:
             #print("no results")
             continue
-        if fold not in results:
-            #print("fold {} not in results".format(fold))
-            continue
-        #print("good")
-        info.append((result_dir, results[fold][metric], epoch))
+        info.append((result_dir, best_results[fold][metric], best_epoch))
     info.sort(key=lambda x: x[1])
     return info
 
