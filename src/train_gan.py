@@ -4,7 +4,7 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--result_dir', required=True, help='Output directory for images and model checkpoints')
+parser.add_argument('--result_dir', help='Output directory for images and model checkpoints [default: .]', default='.')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. [default: 0.5]')
 parser.add_argument('--weight_decay', type=float, default=.0, help='Optimizer L2 weight decay [default: .0]')
 parser.add_argument('--generator_weight', type=float, default=0.01, help='Multiplier for generator adversarial loss [default: 0.01]')
