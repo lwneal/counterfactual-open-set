@@ -122,15 +122,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errC_real = -log_prob_real.mean()
         errC_real.backward()
 
-        # Classify pixel-soup images as fake
-        if gan_scale > 1:
-            noise = make_noise(gan_scale)
-            fake_images = netG(noise, gan_scale)
-            fake_logits = netC(fake_images)
-            augmented_logits = F.pad(fake_logits, pad=(0,1))
-            log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
-            errC_fake = -log_prob_fake.mean()
-            errC_fake.backward()
+        # Fake examples as open set
+        noise = make_noise(gan_scale)
+        fake_images = netG(noise, gan_scale)
+        fake_logits = netC(fake_images)
+        augmented_logits = F.pad(fake_logits, pad=(0,1))
+        log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
+        errC_fake = -log_prob_fake.mean()
+        errC_fake.backward()
 
         optimizerC.step()
         ############################
