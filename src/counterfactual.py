@@ -118,13 +118,15 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
         distance_loss = torch.sum((z - z_0) ** 2)
+        """
         print("Target {} iter {} cf loss {:.4f}, distance loss {:.4f}".format(
             target_class, i, cf_loss.data[0], distance_loss.data[0]))
+        """
         
         total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss)[0]
         z = z - dc_dz * speed
-        z = clamp_to_unit_sphere(z)
+        z = clamp_to_unit_sphere(z, 4)
 
         # TODO: Workaround for Pytorch memory leak
         # Convert back to numpy and destroy the computational graph

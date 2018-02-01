@@ -40,7 +40,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
     seed()
     fixed_noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-    fixed_noise = clamp_to_unit_sphere(fixed_noise)
+    fixed_noise = clamp_to_unit_sphere(fixed_noise, 4)
 
     start_time = time.time()
     seed(int(start_time))
@@ -56,14 +56,19 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
-        if False:
+        # There are two kinds of autoencoder-GANs: the 
+        #   The traditional GAN augmented with an encoder eg Nguyen et al 1612.00005
+        #   The fully-convolutional ones eg Ledig et al, 1609.04802
+        PIXEL_SOUP_MODE = False
+
+        if PIXEL_SOUP_MODE:
             # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
             z = netE(images)
             fake_images = netG(z).detach()
         else:
             # Alternative: classify sampled images as fake
             noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-            noise = clamp_to_unit_sphere(noise)
+            noise = clamp_to_unit_sphere(noise, 4)
             fake_images = netG(noise)
 
         fake_logits = netD(fake_images)
@@ -95,14 +100,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
 
-        if False:
+        if PIXEL_SOUP_MODE:
             # Minimize fakeness of autoencoded images
             z = netE(images)
             fake_images = netG(z)
         else:
             # Alternative: Minimize fakeness of sampled images
             noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-            noise = clamp_to_unit_sphere(noise)
+            noise = clamp_to_unit_sphere(noise, 4)
             fake_images = netG(noise)
 
         fake_logits = netD(fake_images)

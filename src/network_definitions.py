@@ -97,7 +97,7 @@ class encoder32(nn.Module):
 
         x = x.view(batch_size, -1)
         #x = self.fc1(x)
-        x = vector.clamp_to_unit_sphere(x)
+        x = vector.clamp_to_unit_sphere(x, 4)
         return x
 
 

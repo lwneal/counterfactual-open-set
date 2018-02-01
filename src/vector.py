@@ -9,17 +9,13 @@ def gen_noise(K, latent_size):
     return noise
 
 
-def clamp_to_unit_sphere(x):
-    #norm = torch.norm(x, p=2, dim=1)
-    #norm = norm.expand(1, x.size()[0])
-    #return torch.mul(x, 1/norm.t())
-
-    # Split the latent space into pieces, normalize each one
-    GRID_SIZE = 4
+def clamp_to_unit_sphere(x, components=1):
+    # If components=4, then we normalize each quarter of x independently
+    # Useful for the latent spaces of fully-convolutional networks
     batch_size, latent_size = x.shape
     latent_subspaces = []
-    for i in range(GRID_SIZE):
-        step = latent_size // GRID_SIZE
+    for i in range(components):
+        step = latent_size // components
         left, right = step * i, step * (i+1)
         subspace = x[:, left:right].clone()
         norm = torch.norm(subspace, p=2, dim=1)
