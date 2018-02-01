@@ -13,5 +13,5 @@ fi
 
 python src/train_gan.py --epochs 30 2>&1 | tee stdout.txt
 for i in `seq 30`; do
-    python src/evaluate_classifier.py --epoch $i --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee stdout.txt
+    python src/evaluate_classifier.py --epoch $i --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee -a stdout.txt
 done
