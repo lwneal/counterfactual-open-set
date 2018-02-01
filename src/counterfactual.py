@@ -94,7 +94,7 @@ def generate_counterfactual(networks, dataloader, **options):
 
 def generate_counterfactual_column(networks, start_images, target_class, **options):
     netG = networks['generator']
-    netD = networks['discriminator']
+    netC = networks['classifier']
     netE = networks['encoder']
     result_dir = options['result_dir']
     latent_size = options['latent_size']
@@ -113,7 +113,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     for i in range(max_iters):
         z = to_torch(z_value, requires_grad=True)
         z_0 = to_torch(z0_value)
-        logits = netD(netG(z))
+        logits = netC(netG(z))
         augmented_logits = F.pad(logits, pad=(0,1))
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
