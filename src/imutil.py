@@ -10,7 +10,9 @@ from PIL import Image, ImageFont, ImageDraw
 from io import BytesIO
 
 # Should be available on Ubuntu 14.04+
-FONT_FILE = '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'
+#FONT_FILE = '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'
+# Well apparently not. Hey, here's one installed with CUDA:
+FONT_FILE = '/usr/local/cuda/jre/lib/fonts/LucidaSansRegular.ttf'
 
 # Input: Numpy array containing one or more images
 # Output: JPG encoded image bytes
