@@ -97,6 +97,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
 
+        """
         # Pull-away term from https://github.com/kimiyoung/ssl_bad_gan
         features_gen = netE(images, gan_scale)
         nsample = features_gen.size(0)
@@ -107,6 +108,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         pt_loss = torch.sum((cosine * mask) ** 2) / (nsample * (nsample + 1))
         pt_loss /= gan_scale ** 2
         pt_loss.backward()
+        """
 
         if gan_scale > 8:
             # Minimize fakeness of autoencoded images
