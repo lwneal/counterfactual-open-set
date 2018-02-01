@@ -5,3 +5,6 @@ torchvision
 Pillow
 requests
 tqdm
+sklearn
+matplotlib
+seaborn
