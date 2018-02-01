@@ -86,7 +86,7 @@ def get_dataset_name(result_dir):
 
 
 def epoch_from_filename(filename):
-    numbers = filename.split('epoch_')[-1].rstrip('.pth')
+    numbers = filename.split('epoch_')[-1].rstrip('.pth').replace('.json', '')
     return int(numbers)
 
 
@@ -104,18 +104,17 @@ def is_valid_directory(result_dir):
 
 
 def get_epochs(result_dir):
-    checkpoint_dir = os.path.join(RESULTS_DIR, result_dir, 'checkpoints')
-    if not os.path.exists(checkpoint_dir):
-        return []
-    filenames = os.listdir(checkpoint_dir)
-    pth_names = [f for f in filenames if f.endswith('.pth')]
+    filenames = os.listdir(os.path.join(RESULTS_DIR, result_dir))
+    pth_names = [f for f in filenames if f.startswith('eval') and f.endswith('.json')]
     return sorted(list(set(epoch_from_filename(f) for f in pth_names)))
 
 
 def get_all_info(fold, metric, dataset):
     info = []
     for result_dir in get_result_dirs():
+        #print('{}...'.format(result_dir), end='')
         if not is_valid_directory(result_dir):
+            #print('invalid directory')
             continue
         if get_dataset_name(result_dir) != dataset:
             #print("bad dataset name {} does not match {}".format(get_dataset_name(result_dir), dataset))
@@ -131,9 +130,10 @@ def get_all_info(fold, metric, dataset):
             #print("no results")
             continue
         if fold not in results:
-            print("folds: {}".format(results.keys()))
+            #print("fold {} not in results".format(fold))
             continue
-        info.append((result_dir, results[fold][metric]))
+        #print("good")
+        info.append((result_dir, results[fold][metric], epoch))
     info.sort(key=lambda x: x[1])
     return info
 
@@ -155,12 +155,12 @@ def start_new_job():
         print("Error: No runs found for dataset {}".format(dataset))
         return
 
-    print('{:<32} {:<64} {:>8}'.format("Experiment Name", 'Hypothesis', fold + '_' + metric))
-    for (name, metric_val) in infos:
+    print('{:<24} {:<8} {:>12} {:<64}'.format("Experiment", 'Epoch', metric, 'Hypothesis'))
+    for (name, metric_val, epoch) in infos:
         params = json.load(open(os.path.join(RESULTS_DIR, name, 'params.json')))
-        print('{:<32} {:<64} {:>8.4f}'.format(name, params['hypothesis'], metric_val))
+        print('{:<24} {:<8} {:<12.4f} {:<64}'.format(name, epoch, metric_val, params['hypothesis']))
 
-    best_result_dir, best_score = infos[-1]
+    best_result_dir, best_score, best_epochs = infos[-1]
     best_params = get_params(best_result_dir)
 
     print("The best {} run so far was {} with {} = {}".format(
