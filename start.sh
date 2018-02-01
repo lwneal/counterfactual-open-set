@@ -11,7 +11,7 @@ fi
 #python src/datasets/download_celeba.py
 #python src/datasets/download_oxford102.py
 
-python src/train_gan.py 2>&1 | tee stdout.txt
-for i in `seq 10`; do
+python src/train_gan.py --epochs 30 2>&1 | tee stdout.txt
+for i in `seq 30`; do
     python src/evaluate_classifier.py --epoch $i --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee stdout.txt
 done
