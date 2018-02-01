@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn.functional import log_softmax
+import vector
 
 
 def weights_init(m):
@@ -96,6 +97,7 @@ class encoder32(nn.Module):
 
         x = x.view(batch_size, -1)
         #x = self.fc1(x)
+        x = vector.clamp_to_unit_sphere(x)
         return x
 
 

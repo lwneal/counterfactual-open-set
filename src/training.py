@@ -40,7 +40,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
     seed()
     fixed_noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-    #fixed_noise = clamp_to_unit_sphere(fixed_noise)
+    fixed_noise = clamp_to_unit_sphere(fixed_noise)
 
     start_time = time.time()
     seed(int(start_time))
@@ -56,9 +56,16 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
-        # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
-        z = netE(images)
-        fake_images = netG(z).detach()
+        if np.random.random() > .5:
+            # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
+            z = netE(images)
+            fake_images = netG(z).detach()
+        else:
+            # Alternative: classify sampled images as fake
+            noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
+            noise = clamp_to_unit_sphere(noise)
+            fake_images = netG(noise)
+
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
         log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
@@ -88,9 +95,16 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
 
-        # Also minimize fakeness
-        z = netE(images)
-        fake_images = netG(z)
+        if np.random.random() > .5:
+            # Minimize fakeness of autoencoded images
+            z = netE(images)
+            fake_images = netG(z)
+        else:
+            # Alternative: Minimize fakeness of sampled images
+            noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
+            noise = clamp_to_unit_sphere(noise)
+            fake_images = netG(noise)
+
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]

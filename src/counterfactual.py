@@ -124,6 +124,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss)[0]
         z = z - dc_dz * speed
+        z = clamp_to_unit_sphere(z)
 
         # TODO: Workaround for Pytorch memory leak
         # Convert back to numpy and destroy the computational graph
