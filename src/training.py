@@ -30,9 +30,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     netE = networks['encoder']
     netD = networks['discriminator']
     netG = networks['generator']
+    netC = networks['classifier']
     optimizerE = optimizers['encoder']
     optimizerD = optimizers['discriminator']
     optimizerG = optimizers['generator']
+    optimizerC = optimizers['classifier']
     result_dir = options['result_dir']
     batch_size = options['batch_size']
     image_size = options['image_size']
@@ -106,9 +108,36 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         optimizerG.step()
         ###########################
 
+        ############################
+        # Classifier Update
+        ############################
+        netC.zero_grad()
+
+        # Classify real examples into the correct K classes
+        real_logits = netC(images)
+        positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
+        augmented_logits = F.pad(real_logits, pad=(0,1))
+        augmented_labels = F.pad(positive_labels, pad=(0,1))
+        log_prob_real = F.log_softmax(augmented_logits, dim=1) * augmented_labels
+        errC = -log_prob_real.mean()
+        errC.backward()
+
+        # Classify sampled images as fake
+        noise = make_noise(gan_scale)
+        fake_images = netG(noise, gan_scale)
+
+        fake_logits = netC(fake_images)
+        augmented_logits = F.pad(fake_logits, pad=(0,1))
+        log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
+        errC = -log_prob_fake.mean()
+        errC.backward()
+
+        optimizerC.step()
+        ############################
+
         # Keep track of accuracy on positive-labeled examples for monitoring
-        real_logits = netD(images)
-        _, pred_idx = real_logits.max(1)
+        logits = netC(images)
+        _, pred_idx = logits.max(1)
         _, label_idx = labels.max(1)
         correct += sum(pred_idx == label_idx).data.cpu().numpy()[0]
         total += len(labels)

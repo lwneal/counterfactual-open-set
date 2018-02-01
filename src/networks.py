@@ -18,6 +18,9 @@ def build_networks(num_classes, epoch=None, latent_size=10, batch_size=64, **opt
     DiscrimClass = network_definitions.multiclassDiscriminator32
     networks['discriminator'] = DiscrimClass(num_classes=num_classes, latent_size=latent_size)
 
+    ClassifierClass = network_definitions.classifier32
+    networks['classifier'] = ClassifierClass(num_classes=num_classes, latent_size=latent_size)
+
     for net_name in networks:
         pth = get_pth_by_epoch(options['result_dir'], net_name, epoch)
         if pth:
