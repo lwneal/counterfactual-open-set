@@ -59,7 +59,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
-        if gan_scale > 1:
+        if gan_scale > 8:
             # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
             z = netE(images, gan_scale)
             fake_images = netG(z, gan_scale).detach()
@@ -108,7 +108,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         pt_loss /= gan_scale ** 2
         pt_loss.backward()
 
-        if gan_scale > 1:
+        if gan_scale > 8:
             # Minimize fakeness of autoencoded images
             z = netE(images, gan_scale)
             fake_images = netG(z, gan_scale)
