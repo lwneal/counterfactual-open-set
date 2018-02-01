@@ -59,14 +59,9 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
-        if gan_scale > 8:
-            # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
-            z = netE(images, gan_scale)
-            fake_images = netG(z, gan_scale).detach()
-        else:
-            # Alternative: classify sampled images as fake
-            noise = make_noise(gan_scale)
-            fake_images = netG(noise, gan_scale)
+        # Classify sampled images as fake
+        noise = make_noise(gan_scale)
+        fake_images = netG(noise, gan_scale)
 
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
@@ -97,35 +92,9 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
 
+        # Minimize fakeness of sampled images
         noise = make_noise(gan_scale)
-        gen_images = netG(noise, gan_scale)
-
-        # Feature Matching: Average of one batch of real vs. generated
-        features_real = netD(images, return_features=True)
-        features_gen = netD(gen_images, return_features=True)
-        fm_loss = torch.mean((features_real.mean(0) - features_gen.mean(0)) ** 2)
-        fm_loss.backward(retain_graph=True)
-
-        """
-        # Pull-away term from https://github.com/kimiyoung/ssl_bad_gan
-        nsample = features_gen.size(0)
-        denom = features_gen.norm(dim=0).expand_as(features_gen)
-        gen_feat_norm = features_gen / denom
-        cosine = torch.mm(features_gen, features_gen.t())
-        mask = Variable((torch.ones(cosine.size()) - torch.diag(torch.ones(nsample))).cuda())
-        pt_loss = torch.sum((cosine * mask) ** 2) / (nsample * (nsample + 1))
-        pt_loss *= .001 / (gan_scale ** 2)
-        pt_loss.backward()
-        """
-
-        if gan_scale > 8:
-            # Minimize fakeness of autoencoded images
-            z = netE(images, gan_scale)
-            fake_images = netG(z, gan_scale)
-        else:
-            # Alternative: Minimize fakeness of sampled images
-            noise = make_noise(gan_scale)
-            fake_images = netG(noise, gan_scale)
+        fake_images = netG(noise, gan_scale)
 
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
