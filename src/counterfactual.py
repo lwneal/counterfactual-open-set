@@ -60,13 +60,13 @@ def generate_counterfactual(networks, dataloader, **options):
 
     K = dataloader.num_classes
     # Make the batch size large enough to form a square grid
-    cf_count = K + 1
+    cf_count = K + 2
 
     # Start with randomly-selected images from the dataloader
     start_images, _ = dataloader.get_batch()
     start_images = start_images[:cf_count]  # assume batch_size >= cf_count
 
-    batches = []
+    batches = [start_images.cpu().numpy()]
     for target_class in range(K + 1):
         # Generate one column of the visualization, corresponding to a target class
         img_batch = generate_counterfactual_column(networks, start_images, target_class, **options)
