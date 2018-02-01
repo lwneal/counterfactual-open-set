@@ -6,6 +6,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--result_dir', help='Output directory for images and model checkpoints [default: .]', default='.')
 parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train for [default: 10]')
+parser.add_argument('--aux_dataset', help='Path to aux_dataset file [default: None]')
 
 options = vars(parser.parse_args())
 

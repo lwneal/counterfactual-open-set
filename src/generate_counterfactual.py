@@ -28,9 +28,9 @@ from networks import build_networks
 from options import load_options
 
 
+start_epoch = options['start_epoch']
 options = load_options(options)
-
-
+options['epoch'] = start_epoch
 dataloader = CustomDataloader(**options)
 
 # Batch size must be large enough to make a square grid visual

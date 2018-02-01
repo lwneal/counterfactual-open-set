@@ -51,6 +51,16 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     correct = 0
     total = 0
 
+    aux_dataloader = None
+    dataset_filename = options.get('aux_dataset')
+    if dataset_filename and os.path.exists(dataset_filename):
+        print("Using aux_dataset {}".format(dataset_filename))
+        aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
+
+    start_time = time.time()
+    correct = 0
+    total = 0
+
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)
         labels = Variable(class_labels)
@@ -130,6 +140,21 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
         errC_fake = -log_prob_fake.mean()
         errC_fake.backward()
+
+        # Classify the user-labeled (active learning) examples
+        if aux_dataloader is not None:
+            aux_images, aux_labels = aux_dataloader.get_batch()
+            aux_images = Variable(aux_images)
+            aux_labels = Variable(aux_labels)
+            aux_logits = netD(aux_images)
+            augmented_logits = F.pad(aux_logits, pad=(0, 1))
+            augmented_labels = F.pad(aux_labels, pad=(0, 1))
+            augmented_positive_labels = (augmented_labels == 1).type(torch.FloatTensor).cuda()
+            is_positive = (aux_labels.max(dim=1)[0] == 1).type(torch.FloatTensor).cuda()
+            is_negative = 1 - is_positive
+            fake_log_likelihood = F.log_softmax(augmented_logits, dim=1)[:,-1] * is_negative
+            real_log_likelihood = (F.log_softmax(augmented_logits, dim=1) * augmented_positive_labels).sum(dim=1)
+            import pdb; pdb.set_trace()
 
         optimizerC.step()
         ############################
