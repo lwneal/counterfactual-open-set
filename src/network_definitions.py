@@ -221,7 +221,7 @@ class multiclassDiscriminator32(nn.Module):
         self.bn8 = nn.BatchNorm2d(128)
         self.bn9 = nn.BatchNorm2d(128)
 
-        self.fc1 = nn.Linear(128*4*4, num_classes)
+        self.fc1 = nn.Linear(128*4*4 * 2, num_classes)
         self.dr1 = nn.Dropout2d(0.2)
         self.dr2 = nn.Dropout2d(0.2)
         self.dr3 = nn.Dropout2d(0.2)
@@ -268,5 +268,10 @@ class multiclassDiscriminator32(nn.Module):
         x = x.view(batch_size, -1)
         if return_features:
             return x
+
+        # Lazy minibatch discrimination: avg of other examples' features
+        batch_avg = torch.exp(-x.mean(dim=0))
+        batch_avg = batch_avg.expand(batch_size, -1)
+        x = torch.cat([x, batch_avg], dim=1)
         x = self.fc1(x)
         return x
