@@ -53,7 +53,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         images = Variable(images)
         labels = Variable(class_labels)
 
-        gan_scale = random.choice([1, 4, 8])
+        gan_scale = random.choice([1, 2, 4, 8])
         ############################
         # Discriminator Updates
         ###########################
@@ -124,7 +124,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         total += len(labels)
 
         if i % 100 == 0:
-            for gan_scale in (8, 4, 1):
+            for gan_scale in (8, 4, 2, 1):
                 seed()
                 fixed_noise = make_noise(gan_scale)
                 seed(int(time.time()))

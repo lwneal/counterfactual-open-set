@@ -36,6 +36,9 @@ class encoder32(nn.Module):
         # Shortcut out of the network at 4x4
         self.conv_out_9 = nn.Conv2d(128, latent_size, 3, 1, 1, bias=False)
 
+        self.conv10 = nn.Conv2d(128,    128,     3, 2, 1, bias=False)
+        self.conv_out_10 = nn.Conv2d(128, latent_size, 3, 1, 1, bias=False)
+
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -47,12 +50,14 @@ class encoder32(nn.Module):
         self.bn7 = nn.BatchNorm2d(128)
         self.bn8 = nn.BatchNorm2d(128)
         self.bn9 = nn.BatchNorm2d(128)
+        self.bn10 = nn.BatchNorm2d(128)
 
-        self.fc1 = nn.Linear(128*4*4, latent_size)
+        self.fc1 = nn.Linear(128*2*2, latent_size)
 
         self.dr1 = nn.Dropout2d(0.2)
         self.dr2 = nn.Dropout2d(0.2)
         self.dr3 = nn.Dropout2d(0.2)
+        self.dr4 = nn.Dropout2d(0.2)
 
         self.apply(weights_init)
         self.cuda()
@@ -106,6 +111,19 @@ class encoder32(nn.Module):
             x = x.view(batch_size, -1)
             x = clamp_to_unit_sphere(x, 4*4)
             return x
+        
+        x = self.dr4(x)
+        x = self.conv10(x)
+        x = self.bn10(x)
+        x = nn.LeakyReLU(0.2, inplace=True)(x)
+
+        # Image representation is now 2x2
+        if output_scale == 2:
+            x = self.conv_out_10(x)
+            x = x.view(batch_size, -1)
+            x = clamp_to_unit_sphere(x, 2*2)
+            return x
+
         x = x.view(batch_size, -1)
         x = self.fc1(x)
         x = clamp_to_unit_sphere(x)
