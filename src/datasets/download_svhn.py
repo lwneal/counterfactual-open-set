@@ -101,13 +101,19 @@ def download(filename, url):
 
 
 def save_examples(examples):
-    output_filename = '{}/{}.dataset'.format(DATA_DIR, DATASET_NAME)
-    print("Writing {} items to {}".format(len(examples), output_filename))
+    print("Writing {} items to {}".format(len(examples), DATA_DIR))
 
-    fp = open(output_filename, 'w')
-    for ex in examples:
-        fp.write(json.dumps(ex) + '\n')
-    fp.close()
+    with open('{}/svhn.dataset'.format(DATA_DIR), 'w') as fp:
+        for ex in examples:
+            fp.write(json.dumps(ex) + '\n')
+    with open('{}/svhn-04.dataset'.format(DATA_DIR), 'w') as fp:
+        for ex in examples:
+            if int(ex['label']) < 5:
+                fp.write(json.dumps(ex) + '\n')
+    with open('{}/svhn-59.dataset'.format(DATA_DIR), 'w') as fp:
+        for ex in examples:
+            if int(ex['label']) >= 5:
+                fp.write(json.dumps(ex) + '\n')
 
 
 if __name__ == '__main__':
