@@ -11,5 +11,8 @@ fi
 #python src/datasets/download_celeba.py
 #python src/datasets/download_oxford102.py
 
-python src/train_gan.py 2>&1 | tee stdout.txt
-python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee stdout.txt
+# Hack to eval at each epoch
+for i in `seq 10`; do
+    python src/train_gan.py --epochs 1 2>&1 | tee stdout.txt
+    python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee stdout.txt
+done
