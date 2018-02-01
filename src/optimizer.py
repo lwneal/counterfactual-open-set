@@ -155,9 +155,10 @@ def start_new_job():
         print("Error: No runs found for dataset {}".format(dataset))
         return
 
-    print('{:<64} {:>8}'.format("Experiment Name", fold + '_' + metric))
+    print('{:<32} {:<64} {:>8}'.format("Experiment Name", 'Hypothesis', fold + '_' + metric))
     for (name, metric_val) in infos:
-        print('{:<64} {:>8.4f}'.format(name, metric_val))
+        params = json.load(open(os.path.join(RESULTS_DIR, name, 'params.json')))
+        print('{:<32} {:<64} {:>8.4f}'.format(name, params['hypothesis'], metric_val))
 
     best_result_dir, best_score = infos[-1]
     best_params = get_params(best_result_dir)
