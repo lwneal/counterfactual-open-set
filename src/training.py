@@ -91,7 +91,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         # Minimize reconstruction loss
         reconstructed = netG(netE(images, gan_scale), gan_scale)
-        errE = torch.mean(torch.abs(images - reconstructed))
+        errE = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         errE.backward()
 
         # Minimize fakeness of sampled images

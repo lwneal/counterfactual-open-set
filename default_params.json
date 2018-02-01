@@ -1,8 +1,8 @@
 {
   "batch_size": 64,
-  "dataset": "/mnt/data/mnist-05.dataset",
+  "dataset": "/mnt/data/svhn-04.dataset",
   "delete_background": false,
-  "hypothesis": "A very simple test dataset",
+  "hypothesis": "A simple test dataset",
   "image_size": 32,
   "latent_size": 32,
   "random_horizontal_flip": false
