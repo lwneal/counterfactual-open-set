@@ -270,8 +270,8 @@ class multiclassDiscriminator32(nn.Module):
             return x
 
         # Lazy minibatch discrimination: avg of other examples' features
-        batch_avg = torch.exp(-x.mean(dim=0))
+        batch_avg = x.mean(dim=0)
         batch_avg = batch_avg.expand(batch_size, -1)
-        x = torch.cat([x, batch_avg], dim=1)
+        x = torch.cat([x, torch.exp(-torch.abs(x - batch_avg))], dim=1)
         x = self.fc1(x)
         return x
