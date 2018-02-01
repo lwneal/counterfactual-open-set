@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn.functional import log_softmax
-import vector
+from vector import clamp_to_unit_sphere
 
 
 def weights_init(m):
@@ -19,6 +19,7 @@ class encoder32(nn.Module):
         super(self.__class__, self).__init__()
         self.batch_size = batch_size
         self.num_classes = num_classes
+
         self.conv1 = nn.Conv2d(3,       64,     3, 1, 1, bias=False)
         self.conv2 = nn.Conv2d(64,      64,     3, 1, 1, bias=False)
         self.conv3 = nn.Conv2d(64,     128,     3, 2, 1, bias=False)
@@ -26,10 +27,14 @@ class encoder32(nn.Module):
         self.conv4 = nn.Conv2d(128,    128,     3, 1, 1, bias=False)
         self.conv5 = nn.Conv2d(128,    128,     3, 1, 1, bias=False)
         self.conv6 = nn.Conv2d(128,    128,     3, 2, 1, bias=False)
+        # Shortcut out of the network at 8x8
+        self.conv_out_6 = nn.Conv2d(128, latent_size, 3, 1, 1, bias=False)
 
         self.conv7 = nn.Conv2d(128,    128,     3, 1, 1, bias=False)
         self.conv8 = nn.Conv2d(128,    128,     3, 1, 1, bias=False)
         self.conv9 = nn.Conv2d(128,    128,     3, 2, 1, bias=False)
+        # Shortcut out of the network at 4x4
+        self.conv_out_9 = nn.Conv2d(128, latent_size, 3, 1, 1, bias=False)
 
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
@@ -42,11 +47,9 @@ class encoder32(nn.Module):
         self.bn7 = nn.BatchNorm2d(128)
         self.bn8 = nn.BatchNorm2d(128)
         self.bn9 = nn.BatchNorm2d(128)
-        self.bn9b = nn.BatchNorm2d(128)
 
-        self.conv9b = nn.Conv2d(   128,      128, 3, stride=2, padding=1, bias=False)
-        self.conv10 = nn.Conv2d(   128,      int(latent_size / 4), 3, stride=1, padding=1)
-        #self.fc1 = nn.Linear(128*4*4, latent_size)
+        self.fc1 = nn.Linear(128*4*4, latent_size)
+
         self.dr1 = nn.Dropout2d(0.2)
         self.dr2 = nn.Dropout2d(0.2)
         self.dr3 = nn.Dropout2d(0.2)
@@ -54,7 +57,7 @@ class encoder32(nn.Module):
         self.apply(weights_init)
         self.cuda()
 
-    def forward(self, x, return_features=False):
+    def forward(self, x, output_scale=1):
         batch_size = len(x)
 
         x = self.dr1(x)
@@ -79,6 +82,13 @@ class encoder32(nn.Module):
         x = self.bn6(x)
         x = nn.LeakyReLU(0.2, inplace=True)(x)
 
+        # Image representation is now 8 x 8
+        if output_scale == 8:
+            x = self.conv_out_6(x)
+            x = x.view(batch_size, -1)
+            x = clamp_to_unit_sphere(x, 8*8)
+            return x
+
         x = self.dr3(x)
         x = self.conv7(x)
         x = self.bn7(x)
@@ -90,14 +100,15 @@ class encoder32(nn.Module):
         x = self.bn9(x)
         x = nn.LeakyReLU(0.2, inplace=True)(x)
 
-        x = self.conv9b(x)
-        x = self.bn9b(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
-        x = self.conv10(x)
-
+        # Image representation is now 4x4
+        if output_scale == 4:
+            x = self.conv_out_9(x)
+            x = x.view(batch_size, -1)
+            x = clamp_to_unit_sphere(x, 4*4)
+            return x
         x = x.view(batch_size, -1)
-        #x = self.fc1(x)
-        x = vector.clamp_to_unit_sphere(x, 4)
+        x = self.fc1(x)
+        x = clamp_to_unit_sphere(x)
         return x
 
 
@@ -105,42 +116,59 @@ class generator32(nn.Module):
     def __init__(self, latent_size=100, batch_size=64, **kwargs):
         super(self.__class__, self).__init__()
         self.latent_size = latent_size
-        self.conv0a = nn.ConvTranspose2d(int(latent_size/4),  512, 3, stride=1, padding=1, bias=False)
-        self.conv0b = nn.ConvTranspose2d(   512,      512, 4, stride=2, padding=1, bias=False)
-        self.conv1 = nn.ConvTranspose2d(   512,      256, 4, stride=2, padding=1, bias=False)
-        self.conv2 = nn.ConvTranspose2d(   256,      128, 4, stride=2, padding=1, bias=False)
-        self.conv3 = nn.ConvTranspose2d(   128,        3, 4, stride=2, padding=1)
-        self.bn0a = nn.BatchNorm2d(512)
-        self.bn0b = nn.BatchNorm2d(512)
-        self.bn1 = nn.BatchNorm2d(256)
-        self.bn2 = nn.BatchNorm2d(128)
+        self.fc1 = nn.Linear(latent_size, 512*2*2, bias=False)
+
+        self.conv2_in = nn.ConvTranspose2d(latent_size, 512, 1, stride=1, padding=0, bias=False)
+        self.conv2 = nn.ConvTranspose2d(   512,      512, 4, stride=2, padding=1, bias=False)
+        self.conv3_in = nn.ConvTranspose2d(latent_size, 512, 1, stride=1, padding=0, bias=False)
+        self.conv3 = nn.ConvTranspose2d(   512,      256, 4, stride=2, padding=1, bias=False)
+        self.conv4_in = nn.ConvTranspose2d(latent_size, 256, 1, stride=1, padding=0, bias=False)
+        self.conv4 = nn.ConvTranspose2d(   256,      128, 4, stride=2, padding=1, bias=False)
+        self.conv5 = nn.ConvTranspose2d(   128,        3, 4, stride=2, padding=1)
+
+        self.bn1 = nn.BatchNorm2d(512)
+        self.bn2 = nn.BatchNorm2d(512)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.bn4 = nn.BatchNorm2d(128)
 
         self.batch_size = batch_size
         self.apply(weights_init)
         self.cuda()
 
-    def forward(self, x):
+    def forward(self, x, input_scale=1):
         batch_size = x.shape[0]
+        if input_scale <= 1:
+            x = self.fc1(x)
+            x = x.resize(batch_size, 512, 2, 2)
 
-        x = x.resize(batch_size, int(self.latent_size / 4), 2, 2)
         # 512 x 2 x 2
-        x = self.conv0a(x)
-        x = nn.ReLU(inplace=True)(x)
-        x = self.bn0a(x)
-        # 512 x 2 x 2 (still)
-        x = self.conv0b(x)
-        x = nn.ReLU(inplace=True)(x)
-        x = self.bn0b(x)
+        if input_scale == 2:
+            x = x.view(batch_size, self.latent_size, 2, 2)
+            x = self.conv2_in(x)
+        if input_scale <= 2:
+            x = self.conv2(x)
+            x = nn.LeakyReLU(inplace=True)(x)
+            x = self.bn2(x)
+
         # 512 x 4 x 4
-        x = self.conv1(x)
-        x = nn.ReLU(inplace=True)(x)
-        x = self.bn1(x)
+        if input_scale == 4:
+            x = x.view(batch_size, self.latent_size, 4, 4)
+            x = self.conv3_in(x)
+        if input_scale <= 4:
+            x = self.conv3(x)
+            x = nn.LeakyReLU(inplace=True)(x)
+            x = self.bn3(x)
+
         # 256 x 8 x 8
-        x = self.conv2(x)
-        x = nn.ReLU(inplace=True)(x)
-        x = self.bn2(x)
+        if input_scale == 8:
+            x = x.view(batch_size, self.latent_size, 8, 8)
+            x = self.conv4_in(x)
+        if input_scale <= 8:
+            x = self.conv4(x)
+            x = nn.LeakyReLU(inplace=True)(x)
+            x = self.bn4(x)
         # 128 x 16 x 16
-        x = self.conv3(x)
+        x = self.conv5(x)
         # 3 x 32 x 32
         x = nn.Sigmoid()(x)
         return x

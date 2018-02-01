@@ -38,12 +38,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     image_size = options['image_size']
     latent_size = options['latent_size']
 
-    seed()
-    fixed_noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-    fixed_noise = clamp_to_unit_sphere(fixed_noise, 4)
+    def make_noise(scale):
+        noise_t = torch.FloatTensor(batch_size, latent_size * scale * scale)
+        noise_t.normal_(0, 1)
+        noise = Variable(noise_t).cuda()
+        return clamp_to_unit_sphere(noise, scale)
+
 
     start_time = time.time()
-    seed(int(start_time))
     correct = 0
     total = 0
 
@@ -51,25 +53,20 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         images = Variable(images)
         labels = Variable(class_labels)
 
+        gan_scale = random.choice([1, 4, 8])
         ############################
         # Discriminator Updates
         ###########################
         netD.zero_grad()
 
-        # There are two kinds of autoencoder-GANs: the 
-        #   The traditional GAN augmented with an encoder eg Nguyen et al 1612.00005
-        #   The fully-convolutional ones eg Ledig et al, 1609.04802
-        PIXEL_SOUP_MODE = False
-
-        if PIXEL_SOUP_MODE:
+        if gan_scale > 1:
             # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
-            z = netE(images)
-            fake_images = netG(z).detach()
+            z = netE(images, gan_scale)
+            fake_images = netG(z, gan_scale).detach()
         else:
             # Alternative: classify sampled images as fake
-            noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-            noise = clamp_to_unit_sphere(noise, 4)
-            fake_images = netG(noise)
+            noise = make_noise(gan_scale)
+            fake_images = netG(noise, gan_scale)
 
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
@@ -96,19 +93,18 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netG.zero_grad()
 
         # Minimize reconstruction loss
-        reconstructed = netG(netE(images))
+        reconstructed = netG(netE(images, gan_scale), gan_scale)
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
 
-        if PIXEL_SOUP_MODE:
+        if gan_scale > 1:
             # Minimize fakeness of autoencoded images
-            z = netE(images)
-            fake_images = netG(z)
+            z = netE(images, gan_scale)
+            fake_images = netG(z, gan_scale)
         else:
             # Alternative: Minimize fakeness of sampled images
-            noise = Variable(torch.FloatTensor(batch_size, latent_size).normal_(0, 1)).cuda()
-            noise = clamp_to_unit_sphere(noise, 4)
-            fake_images = netG(noise)
+            noise = make_noise(gan_scale)
+            fake_images = netG(noise, gan_scale)
 
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0,1))
@@ -128,18 +124,22 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         total += len(labels)
 
         if i % 100 == 0:
-            demo_fakes = netG(fixed_noise)
-            img = demo_fakes.data[:16]
-            filename = "{}/images/samples_{}.jpg".format(result_dir, int(time.time()))
-            print("Generator Samples:")
-            imutil.show(img, filename=filename, resize_to=(256,256))
+            for gan_scale in (8, 4, 1):
+                seed()
+                fixed_noise = make_noise(gan_scale)
+                seed(int(time.time()))
+                print("Generator Samples scale {}:".format(gan_scale))
+                demo_fakes = netG(fixed_noise, gan_scale)
+                img = demo_fakes.data[:16]
+                filename = "{}/images/samples_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
+                imutil.show(img, filename=filename, resize_to=(256,256), caption="Samples scale {}".format(gan_scale))
 
-            print("Autoencoder Reconstructions:")
-            aac_before = images[:8]
-            aac_after = netG(netE(aac_before))
-            filename = "{}/images/reconstruction_{}.jpg".format(result_dir, int(time.time()))
-            img = torch.cat((aac_before, aac_after))
-            imutil.show(img, filename=filename, resize_to=(256,256))
+                print("Autoencoder Reconstructions scale {}:".format(gan_scale))
+                aac_before = images[:8]
+                aac_after = netG(netE(aac_before, gan_scale), gan_scale)
+                filename = "{}/images/reconstruction_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
+                img = torch.cat((aac_before, aac_after))
+                imutil.show(img, filename=filename, resize_to=(256,256), caption="Reconstruction scale {}".format(gan_scale))
 
             bps = (i+1) / (time.time() - start_time)
             ed = errD.data[0]
