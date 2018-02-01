@@ -56,7 +56,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
-        if np.random.random() > .5:
+        if False:
             # Classify AUTOENCODED examples as "fake" (ie the K+1th "open" class)
             z = netE(images)
             fake_images = netG(z).detach()
@@ -95,7 +95,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errE = torch.mean(torch.abs(images - reconstructed))
         errE.backward()
 
-        if np.random.random() > .5:
+        if False:
             # Minimize fakeness of autoencoded images
             z = netE(images)
             fake_images = netG(z)
