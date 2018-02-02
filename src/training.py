@@ -74,21 +74,19 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         # Classify sampled images as fake
         noise = make_noise(gan_scale)
         fake_images = netG(noise, gan_scale)
-
         fake_logits = netD(fake_images)
-        augmented_logits = F.pad(fake_logits, pad=(0,1))
-        log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
-        errD = -log_prob_fake.mean()
-        errD.backward()
+        augmented_logits = F.pad(fake_logits, pad=(0, 1))
+        log_prob_fake = -(F.log_softmax(augmented_logits, dim=1)[:, -1]).mean()
 
         # Classify real examples into the correct K classes
         real_logits = netD(images)
-        positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
         augmented_logits = F.pad(real_logits, pad=(0, 1))
+        positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
         augmented_labels = F.pad(positive_labels, pad=(0, 1))
-        log_prob_real = F.log_softmax(augmented_logits, dim=1) * augmented_labels
-        errC = -log_prob_real.mean()
-        errC.backward()
+        log_prob_real = -(F.log_softmax(augmented_logits, dim=1) * augmented_labels).mean()
+
+        errD = (log_prob_fake.mean() + log_prob_fake.mean()) * options['discriminator_weight']
+        errD.backward()
 
         optimizerD.step()
         ############################
@@ -105,7 +103,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0, 1))
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
-        errG = -log_prob_not_fake.mean()
+        errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
 
         # Minimize reconstruction loss (of samples)

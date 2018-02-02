@@ -7,5 +7,6 @@
   "latent_size": 32,
   "random_horizontal_flip": false,
   "reconstruction_weight": 1.0,
-  "generator_weight": 0.01
+  "generator_weight": 1.0,
+  "discriminator_weight": 1.0
 }
