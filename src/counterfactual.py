@@ -55,7 +55,7 @@ def rejection_sample(networks, dataloader, **options):
 # Generates 'counterfactual' images for each class, by gradient descent of the class
 def generate_counterfactual(networks, dataloader, **options):
     """
-    # TODO: Understand BatchNorm behavior in eval mode
+    # TODO: Fix Dropout/BatchNormalization outside of training
     for net in networks:
         networks[net].eval()
     """
@@ -103,10 +103,12 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     latent_size = options['latent_size']
     speed = options['cf_speed']
     max_iters = options['cf_max_iters']
+    distance_weight = options['cf_distance_weight']
+    gan_scale = options['cf_gan_scale']
     cf_batch_size = len(start_images)
 
     # Start with the latent encodings
-    z_value = to_np(netE(start_images))
+    z_value = to_np(netE(start_images, gan_scale))
     z0_value = z_value
 
     # Move them so their labels match target_label
@@ -116,20 +118,18 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     for i in range(max_iters):
         z = to_torch(z_value, requires_grad=True)
         z_0 = to_torch(z0_value)
-        logits = netC(netG(z))
+        logits = netC(netG(z, gan_scale), gan_scale)
         augmented_logits = F.pad(logits, pad=(0,1))
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
-        distance_loss = torch.sum((z - z_0) ** 2)
-        """
+        distance_loss = torch.sum((z - z_0) ** 2) * distance_weight
         print("Target {} iter {} cf loss {:.4f}, distance loss {:.4f}".format(
             target_class, i, cf_loss.data[0], distance_loss.data[0]))
-        """
         
         total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss)[0]
         z = z - dc_dz * speed
-        z = clamp_to_unit_sphere(z)
+        z = clamp_to_unit_sphere(z, gan_scale)
 
         # TODO: Workaround for Pytorch memory leak
         # Convert back to numpy and destroy the computational graph
@@ -138,7 +138,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         del z
     z = to_torch(z_value)
 
-    images = netG(z)
+    images = netG(z, gan_scale)
     return images.data.cpu().numpy()
 
 

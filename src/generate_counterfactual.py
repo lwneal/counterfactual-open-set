@@ -16,6 +16,8 @@ parser.add_argument('--batch_size', type=int, default=64, help='Batch size [defa
 parser.add_argument('--fold', type=str, default='train', help='Fold [default: train]')
 parser.add_argument('--cf_speed', type=float, default=.01, help='Learning rate for counterfactual descent [default: .01]')
 parser.add_argument('--cf_max_iters', type=int, default=100, help='Maximum number of steps to take for CF trajectories [default: 100]')
+parser.add_argument('--cf_distance_weight', type=float, default=1, help='Weight for latent distance loss [default: 1]')
+parser.add_argument('--cf_gan_scale', type=int, default=1, help='Scale, for multiscale GAN')
 parser.add_argument('--start_epoch', type=int, help='Epoch to start from (defaults to most recent epoch)')
 parser.add_argument('--count', type=int, default=1, help='Number of counterfactuals to generate')
 
@@ -28,9 +30,17 @@ from networks import build_networks
 from options import load_options
 
 
+# TODO: Suppose there's a default, and a saved params.json, and a command-line argument
+# Which one do we use?
+# Should be:  CLI arg > params.json > default value
+speed = options['cf_speed']
+max_iters = options['cf_max_iters']
 start_epoch = options['start_epoch']
 options = load_options(options)
 options['epoch'] = start_epoch
+options['cf_speed'] = speed
+options['cf_max_iters'] = max_iters
+
 dataloader = CustomDataloader(**options)
 
 # Batch size must be large enough to make a square grid visual
