@@ -97,6 +97,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         # Generator Update
         ###########################
         netG.zero_grad()
+        netE.zero_grad()
 
         # Minimize fakeness of sampled images
         noise = make_noise(gan_scale)
@@ -107,18 +108,17 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
         log.collect('errG', errG)
-        optimizerG.step()
 
         ############################
         # Encoder Update
         ###########################
-        netE.zero_grad()
         # Minimize reconstruction loss (of samples)
         reconstructed = netG(netE(images, gan_scale), gan_scale)
         err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
         log.collect('err_reconstruction', err_reconstruction)
 
+        optimizerG.step()
         optimizerE.step()
         ###########################
 
