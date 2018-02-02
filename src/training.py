@@ -86,7 +86,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log_prob_real = -(F.log_softmax(augmented_logits, dim=1) * augmented_labels).mean()
         log.collect('errD_real', log_prob_real)
 
-        errD = (log_prob_fake.mean() + log_prob_fake.mean()) * options['discriminator_weight']
+        errD = (log_prob_fake.mean() + log_prob_real.mean()) * options['discriminator_weight']
         errD.backward()
         log.collect('errD', errD)
 
@@ -94,9 +94,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ############################
 
         ############################
-        # Autoencoder Update
+        # Generator Update
         ###########################
-        netE.zero_grad()
         netG.zero_grad()
 
         # Minimize fakeness of sampled images
@@ -108,15 +107,19 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
         log.collect('errG', errG)
+        optimizerG.step()
 
-        # Minimize reconstruction loss (of samples, at multiple scales)
-        samples = netG(make_noise(gan_scale))
-        reconstructed = netG(netE(samples, gan_scale), gan_scale)
-        err_reconstruction = torch.mean(torch.abs(samples - reconstructed)) * options['reconstruction_weight']
+        ############################
+        # Encoder Update
+        ###########################
+        netE.zero_grad()
+        # Minimize reconstruction loss (of samples)
+        reconstructed = netG(netE(images, gan_scale), gan_scale)
+        err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
+        log.collect('err_reconstruction', err_reconstruction)
 
         optimizerE.step()
-        optimizerG.step()
         ###########################
 
         ############################
@@ -142,7 +145,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         if i % 10 == 0:
             if i % 100 == 0:
-                for gan_scale in (8, 4, 2, 1):
+                #for gan_scale in (8, 4, 2, 1):
+                for gan_scale in [1]:
                     seed()
                     fixed_noise = make_noise(gan_scale)
                     seed(int(time.time()))
