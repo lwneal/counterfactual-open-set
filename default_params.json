@@ -8,5 +8,7 @@
   "random_horizontal_flip": false,
   "reconstruction_weight": 1.0,
   "generator_weight": 1.0,
-  "discriminator_weight": 1.0
+  "discriminator_weight": 1.0,
+  "cf_speed": 0.1,
+  "cf_max_iters": 100
 }

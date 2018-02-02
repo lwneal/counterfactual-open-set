@@ -12,6 +12,7 @@ from torch.nn.functional import softmax, log_softmax, relu
 import imutil
 from vector import gen_noise, clamp_to_unit_sphere
 from dataloader import FlexibleCustomDataloader
+from series import TimeSeries
 
 
 def seed(val=42):
@@ -46,11 +47,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         noise = Variable(noise_t).cuda()
         return clamp_to_unit_sphere(noise, scale)
 
-
-    start_time = time.time()
-    correct = 0
-    total = 0
-
     aux_dataloader = None
     dataset_filename = options.get('aux_dataset')
     if dataset_filename and os.path.exists(dataset_filename):
@@ -60,6 +56,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     start_time = time.time()
     correct = 0
     total = 0
+
+    log = TimeSeries()
 
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)
@@ -78,6 +76,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0, 1))
         log_prob_fake = -(F.log_softmax(augmented_logits, dim=1)[:, -1]).mean()
+        log.collect('errD_fake', log_prob_fake)
 
         # Classify real examples into the correct K classes
         real_logits = netD(images)
@@ -85,9 +84,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
         augmented_labels = F.pad(positive_labels, pad=(0, 1))
         log_prob_real = -(F.log_softmax(augmented_logits, dim=1) * augmented_labels).mean()
+        log.collect('errD_real', log_prob_real)
 
         errD = (log_prob_fake.mean() + log_prob_fake.mean()) * options['discriminator_weight']
         errD.backward()
+        log.collect('errD', errD)
 
         optimizerD.step()
         ############################
@@ -106,12 +107,13 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
         errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
+        log.collect('errG', errG)
 
         # Minimize reconstruction loss (of samples, at multiple scales)
         samples = netG(make_noise(gan_scale))
         reconstructed = netG(netE(samples, gan_scale), gan_scale)
-        errE = torch.mean(torch.abs(samples - reconstructed)) * options['reconstruction_weight']
-        errE.backward()
+        err_reconstruction = torch.mean(torch.abs(samples - reconstructed)) * options['reconstruction_weight']
+        err_reconstruction.backward()
 
         optimizerE.step()
         optimizerG.step()
@@ -126,6 +128,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         classifier_logits = netC(images) 
         errC = F.relu(classifier_logits * labels).mean()
         errC.backward()
+        log.collect('errC', errC)
 
         optimizerC.step()
         ############################
@@ -137,32 +140,35 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         correct += sum(pred_idx == label_idx).data.cpu().numpy()[0]
         total += len(labels)
 
-        if i % 100 == 0:
-            for gan_scale in (8, 4, 2, 1):
-                seed()
-                fixed_noise = make_noise(gan_scale)
-                seed(int(time.time()))
-                print("Generator Samples scale {}:".format(gan_scale))
-                demo_fakes = netG(fixed_noise, gan_scale)
-                img = demo_fakes.data[:16]
-                filename = "{}/images/samples_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
-                imutil.show(img, filename=filename, resize_to=(256,256), caption="Samples scale {}".format(gan_scale))
+        if i % 10 == 0:
+            if i % 100 == 0:
+                for gan_scale in (8, 4, 2, 1):
+                    seed()
+                    fixed_noise = make_noise(gan_scale)
+                    seed(int(time.time()))
+                    print("Generator Samples scale {}:".format(gan_scale))
+                    demo_fakes = netG(fixed_noise, gan_scale)
+                    img = demo_fakes.data[:16]
+                    filename = "{}/images/samples_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
+                    imutil.show(img, filename=filename, resize_to=(256,256), caption="Samples scale {}".format(gan_scale))
 
-                print("Autoencoder Reconstructions scale {}:".format(gan_scale))
-                aac_before = images[:8]
-                aac_after = netG(netE(aac_before, gan_scale), gan_scale)
-                filename = "{}/images/reconstruction_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
-                img = torch.cat((aac_before, aac_after))
-                imutil.show(img, filename=filename, resize_to=(256,256), caption="Reconstruction scale {}".format(gan_scale))
+                    print("Autoencoder Reconstructions scale {}:".format(gan_scale))
+                    aac_before = images[:8]
+                    aac_after = netG(netE(aac_before, gan_scale), gan_scale)
+                    filename = "{}/images/reconstruction_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
+                    img = torch.cat((aac_before, aac_after))
+                    imutil.show(img, filename=filename, resize_to=(256,256), caption="Reconstruction scale {}".format(gan_scale))
 
+            print(log)
             bps = (i+1) / (time.time() - start_time)
             ed = errD.data[0]
             eg = errG.data[0]
             ec = errC.data[0]
+            er = err_reconstruction.data[0]
             acc = correct / max(total, 1)
-            msg = '[{}][{}/{}] D:{:.3f} G:{:.3f} C:{:.3f} Acc. {:.3f} {:.3f} batch/sec'
+            msg = '[{}][{}/{}] AAC: {:.3f} D:{:.3f} G:{:.3f} C:{:.3f} Acc. {:.3f} {:.3f} batch/sec'
             msg = msg.format(
                   epoch, i+1, len(dataloader),
-                  ed, eg, ec, acc, bps)
+                  er, ed, eg, ec, acc, bps)
             print(msg)
     return True
