@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pip install -r requirements.txt
+pip install -r requirements.txt | grep -v already satisfied
 
 if [ ! -f /mnt/data/svhn-04.dataset ]; then
     python src/datasets/download_svhn.py
