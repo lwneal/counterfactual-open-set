@@ -54,8 +54,11 @@ def rejection_sample(networks, dataloader, **options):
 
 # Generates 'counterfactual' images for each class, by gradient descent of the class
 def generate_counterfactual(networks, dataloader, **options):
+    """
+    # TODO: Understand BatchNorm behavior in eval mode
     for net in networks:
         networks[net].eval()
+    """
     result_dir = options['result_dir']
 
     K = dataloader.num_classes
