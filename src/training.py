@@ -84,8 +84,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         # Classify real examples into the correct K classes
         real_logits = netD(images)
         positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
-        augmented_logits = F.pad(real_logits, pad=(0,1))
-        augmented_labels = F.pad(positive_labels, pad=(0,1))
+        augmented_logits = F.pad(real_logits, pad=(0, 1))
+        augmented_labels = F.pad(positive_labels, pad=(0, 1))
         log_prob_real = F.log_softmax(augmented_logits, dim=1) * augmented_labels
         errC = -log_prob_real.mean()
         errC.backward()
@@ -99,20 +99,20 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netE.zero_grad()
         netG.zero_grad()
 
-        # Minimize reconstruction loss
-        reconstructed = netG(netE(images, gan_scale), gan_scale)
-        errE = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
-        errE.backward()
-
         # Minimize fakeness of sampled images
-        noise = make_noise(gan_scale)
-        fake_images = netG(noise, gan_scale)
-
+        noise = make_noise(1)
+        fake_images = netG(noise)
         fake_logits = netD(fake_images)
-        augmented_logits = F.pad(fake_logits, pad=(0,1))
+        augmented_logits = F.pad(fake_logits, pad=(0, 1))
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
-        errG = -log_prob_not_fake.mean() * options['generator_weight']
+        errG = -log_prob_not_fake.mean()
         errG.backward()
+
+        # Minimize reconstruction loss (of samples)
+        samples = netG(make_noise(1))
+        reconstructed = netG(netE(samples, gan_scale), gan_scale)
+        errE = torch.mean(torch.abs(samples - reconstructed)) * options['reconstruction_weight']
+        errE.backward()
 
         optimizerE.step()
         optimizerG.step()
@@ -123,37 +123,10 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ############################
         netC.zero_grad()
 
-        # Classify real examples into the correct K classes
-        real_logits = netC(images)
-        positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
-        augmented_logits = F.pad(real_logits, pad=(0,1))
-        augmented_labels = F.pad(positive_labels, pad=(0,1))
-        log_prob_real = F.log_softmax(augmented_logits, dim=1) * augmented_labels
-        errC_real = -log_prob_real.mean()
-        errC_real.backward()
-
-        # Fake examples as open set
-        noise = make_noise(gan_scale)
-        fake_images = netG(noise, gan_scale)
-        fake_logits = netC(fake_images)
-        augmented_logits = F.pad(fake_logits, pad=(0,1))
-        log_prob_fake = F.log_softmax(augmented_logits, dim=1)[:, -1]
-        errC_fake = -log_prob_fake.mean()
-        errC_fake.backward()
-
-        # Classify the user-labeled (active learning) examples
-        if aux_dataloader is not None:
-            aux_images, aux_labels = aux_dataloader.get_batch()
-            aux_images = Variable(aux_images)
-            aux_labels = Variable(aux_labels)
-            aux_logits = netD(aux_images)
-            augmented_logits = F.pad(aux_logits, pad=(0, 1))
-            augmented_labels = F.pad(aux_labels, pad=(0, 1))
-            augmented_positive_labels = (augmented_labels == 1).type(torch.FloatTensor).cuda()
-            is_positive = (aux_labels.max(dim=1)[0] == 1).type(torch.FloatTensor).cuda()
-            is_negative = 1 - is_positive
-            fake_log_likelihood = F.log_softmax(augmented_logits, dim=1)[:,-1] * is_negative
-            real_log_likelihood = (F.log_softmax(augmented_logits, dim=1) * augmented_positive_labels).sum(dim=1)
+        # Classify real examples into the correct K classes with hinge loss
+        classifier_logits = netC(images) 
+        errC = F.relu(classifier_logits * labels).mean()
+        errC.backward()
 
         optimizerC.step()
         ############################
