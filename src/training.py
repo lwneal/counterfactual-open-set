@@ -65,7 +65,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         images = Variable(images)
         labels = Variable(class_labels)
 
-        gan_scale = random.choice([1, 2, 4, 8])
+        #gan_scale = random.choice([1, 2, 4, 8])
+        gan_scale = 1
         ############################
         # Discriminator Updates
         ###########################
@@ -98,7 +99,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netG.zero_grad()
 
         # Minimize fakeness of sampled images
-        noise = make_noise(1)
+        noise = make_noise(gan_scale)
         fake_images = netG(noise)
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0, 1))
@@ -106,8 +107,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
 
-        # Minimize reconstruction loss (of samples)
-        samples = netG(make_noise(1))
+        # Minimize reconstruction loss (of samples, at multiple scales)
+        samples = netG(make_noise(gan_scale))
         reconstructed = netG(netE(samples, gan_scale), gan_scale)
         errE = torch.mean(torch.abs(samples - reconstructed)) * options['reconstruction_weight']
         errE.backward()
