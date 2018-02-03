@@ -9,17 +9,28 @@ from imutil import ensure_directory_exists
 def build_networks(num_classes, epoch=None, latent_size=10, batch_size=64, **options):
     networks = {}
 
+    # One encoder learns to encode the CLASS of the input example
     EncoderClass = network_definitions.encoder32
     networks['encoder'] = EncoderClass(latent_size=latent_size)
 
+    # Another encoder learns to encode all information EXCEPT the class
+    EncoderClass = network_definitions.encoder32
+    networks['encoder2'] = EncoderClass(latent_size=latent_size)
+
+    # Generator now takes as input TWO latent codes, one from each encoder
     GeneratorClass = network_definitions.generator32
-    networks['generator'] = GeneratorClass(latent_size=latent_size)
+    networks['generator'] = GeneratorClass(latent_size=latent_size * 2)
 
     DiscrimClass = network_definitions.multiclassDiscriminator32
     networks['discriminator'] = DiscrimClass(num_classes=num_classes, latent_size=latent_size)
 
+    # One classifier cooperates with the first encoder to properly encode class
     ClassifierClass = network_definitions.classifier32
     networks['classifier'] = ClassifierClass(num_classes=num_classes, latent_size=latent_size)
+
+    # The other classifier adversarially prevents the second encoder from learning class
+    ClassifierClass = network_definitions.classifier32
+    networks['classifier2'] = ClassifierClass(num_classes=num_classes, latent_size=latent_size)
 
     for net_name in networks:
         pth = get_pth_by_epoch(options['result_dir'], net_name, epoch)

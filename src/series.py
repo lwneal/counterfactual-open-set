@@ -7,7 +7,7 @@ class TimeSeries:
         lines = []
         duration = time.time() - self.start_time
         lines.append("Logged for {:.3f} sec".format(duration))
-        for name in self.series:
+        for name in sorted(self.series):
             values = np.array(self.series[name])
             lines.append("{:<24}:\t{:>8d} points, avg value {:.4f}".format(
                 name, len(values), values.mean()))

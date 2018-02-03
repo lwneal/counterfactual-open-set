@@ -25,5 +25,5 @@ optimizers = get_optimizers(networks, **options)
 start_epoch = get_current_epoch(options['result_dir']) + 1
 for epoch in range(start_epoch, start_epoch + options['epochs']):
     train_gan(networks, optimizers, dataloader, epoch=epoch, **options)
-    generate_counterfactual(networks, dataloader, **options)
+    #generate_counterfactual(networks, dataloader, **options)
     save_networks(networks, epoch, options['result_dir'])
