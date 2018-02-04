@@ -69,23 +69,20 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
+        # Hack: Just use a single class (back to dcgan)
         # Classify sampled images as fake
         noise = make_noise(gan_scale)
         fake_images = netG(noise, gan_scale)
-        fake_logits = netD(fake_images)
-        augmented_logits = F.pad(fake_logits, pad=(0, 1))
-        log_prob_fake = -(F.log_softmax(augmented_logits, dim=1)[:, -1]).mean()
-        log.collect('Discriminator Loss on Generated Examples', log_prob_fake)
+        logits = netD(fake_images)[:,0]
+        loss_fake = F.relu(logits).mean()
+        log.collect('Discriminator Loss on Generated Examples', loss_fake)
 
-        # Classify real examples into the correct K classes
-        real_logits = netD(images)
-        augmented_logits = F.pad(real_logits, pad=(0, 1))
-        positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
-        augmented_labels = F.pad(positive_labels, pad=(0, 1))
-        log_prob_real = -(F.log_softmax(augmented_logits, dim=1) * augmented_labels).mean()
-        log.collect('Discriminator Loss on Real Examples', log_prob_real)
+        # Classify real examples as real
+        logits = netD(images)[:,0]
+        loss_real = F.relu(-logits).mean()
+        log.collect('Discriminator Loss on Real Examples', loss_real)
 
-        errD = (log_prob_fake.mean() + log_prob_real.mean()) * options['discriminator_weight']
+        errD = (loss_real.mean() + loss_fake.mean()) * options['discriminator_weight']
         errD.backward()
         log.collect('Discriminator Loss Total', errD)
 
@@ -101,10 +98,10 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         # Minimize fakeness of sampled images
         noise = make_noise(gan_scale)
         fake_images = netG(noise, gan_scale)
-        fake_logits = netD(fake_images)
-        augmented_logits = F.pad(fake_logits, pad=(0, 1))
-        log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
-        errG = -log_prob_not_fake.mean() * options['generator_weight']
+
+        # Hack: Just use a single class (back to dcgan)
+        logits = netD(fake_images)[:,0]
+        errG = F.relu(-logits).mean() * options['generator_weight']
         errG.backward()
         log.collect('Generator Loss', errG)
 
@@ -128,7 +125,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         # Classify real examples into the correct K classes with hinge loss
         classifier_logits = netC(images) 
-        errC = -F.relu(classifier_logits * labels).mean()
+        errC = F.relu(classifier_logits * -labels).mean()
         errC.backward()
         log.collect('Classifier Loss', errC)
 
