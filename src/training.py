@@ -110,6 +110,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netE1.zero_grad()
         netE2.zero_grad()
 
+        """
         # Minimize fakeness of sampled images
         noise = make_noise(gan_scale, latent_size*2)
         fake_images = netG(noise)
@@ -119,6 +120,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
         log.collect('errG', errG)
+        """
 
         ############################
         # Encoder Update
@@ -213,14 +215,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                     imutil.show(img, filename=filename, resize_to=(256,256), caption="Reconstruction scale {}".format(gan_scale))
 
                     print("Dual Latent Space Crossover {}:".format(gan_scale))
-                    img = netG(torch.cat([netE1(images[:16]), make_noise(gan_scale, latent_size)[:16]], dim=1))
+                    img = netG(torch.cat([netE1(images[:8]), make_noise(gan_scale, latent_size)[:8]], dim=1))
                     filename = "{}/images/change_content_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
-                    imutil.show(img, filename=filename, resize_to=(256,256), caption="Noise for z2 {}".format(gan_scale))
+                    imutil.show(torch.cat([aac_before, img], filename=filename, resize_to=(256,256), caption="Noise for z2 {}".format(gan_scale))
 
                     print("Dual Latent Space Crossover {}:".format(gan_scale))
-                    img = netG(torch.cat([make_noise(gan_scale, latent_size)[:16], netE2(images[:16])], dim=1))
+                    img = netG(torch.cat([make_noise(gan_scale, latent_size)[:8], netE2(images[:8])], dim=1))
                     filename = "{}/images/change_style_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
-                    imutil.show(img, filename=filename, resize_to=(256,256), caption="Noise for z1 {}".format(gan_scale))
+                    imutil.show(torch.cat([aac_before, img], filename=filename, resize_to=(256,256), caption="Noise for z2 {}".format(gan_scale))
 
             log.collect("GoodAcc", good_correct / total)
             log.collect("BadAcc", bad_correct / total)
