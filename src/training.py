@@ -63,8 +63,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         images = Variable(images)
         labels = Variable(class_labels)
 
-        #gan_scale = random.choice([1, 2, 4, 8])
-        gan_scale = 1
+        gan_scale = 4
         ############################
         # Discriminator Updates
         ###########################
@@ -101,7 +100,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         # Minimize fakeness of sampled images
         noise = make_noise(gan_scale)
-        fake_images = netG(noise)
+        fake_images = netG(noise, gan_scale)
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0, 1))
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
