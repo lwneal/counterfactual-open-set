@@ -75,7 +75,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         fake_logits = netD(fake_images)
         augmented_logits = F.pad(fake_logits, pad=(0, 1))
         log_prob_fake = -(F.log_softmax(augmented_logits, dim=1)[:, -1]).mean()
-        log.collect('errD_fake', log_prob_fake)
+        log.collect('Discriminator Loss on Generated Examples', log_prob_fake)
 
         # Classify real examples into the correct K classes
         real_logits = netD(images)
@@ -83,11 +83,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         positive_labels = (labels == 1).type(torch.cuda.FloatTensor)
         augmented_labels = F.pad(positive_labels, pad=(0, 1))
         log_prob_real = -(F.log_softmax(augmented_logits, dim=1) * augmented_labels).mean()
-        log.collect('errD_real', log_prob_real)
+        log.collect('Discriminator Loss on Real Examples', log_prob_real)
 
         errD = (log_prob_fake.mean() + log_prob_real.mean()) * options['discriminator_weight']
         errD.backward()
-        log.collect('errD', errD)
+        log.collect('Discriminator Loss Total', errD)
 
         optimizerD.step()
         ############################
@@ -106,7 +106,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log_prob_not_fake = F.log_softmax(-augmented_logits, dim=1)[:, -1]
         errG = -log_prob_not_fake.mean() * options['generator_weight']
         errG.backward()
-        log.collect('errG', errG)
+        log.collect('Generator Loss', errG)
 
         ############################
         # Encoder Update
@@ -115,7 +115,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         reconstructed = netG(netE(images, gan_scale), gan_scale)
         err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
-        log.collect('err_reconstruction', err_reconstruction)
+        log.collect('Pixel Reconstruction Loss', err_reconstruction)
 
         optimizerG.step()
         optimizerE.step()
@@ -130,17 +130,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         classifier_logits = netC(images) 
         errC = F.relu(classifier_logits * labels).mean()
         errC.backward()
-        log.collect('errC', errC)
+        log.collect('Classifier Loss', errC)
 
         optimizerC.step()
         ############################
 
         # Keep track of accuracy on positive-labeled examples for monitoring
-        logits = netC(images)
-        _, pred_idx = logits.max(1)
-        _, label_idx = labels.max(1)
-        correct += sum(pred_idx == label_idx).data.cpu().numpy()[0]
-        total += len(labels)
+        log.collect_prediction('Classifier Accuracy', netC(images), labels)
+        log.collect_prediction('Discriminator Accuracy, Real Data', netD(images), labels)
 
         if i % 10 == 0:
             if i % 100 == 0:
@@ -154,7 +151,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                 fixed_noise = make_noise(gan_scale)
                 seed(int(time.time()))
 
-                print("Generator Samples scale {}:".format(gan_scale))
                 demo_fakes = netG(fixed_noise, gan_scale)
                 img = demo_fakes.data[:16]
 
@@ -163,7 +159,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                 imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
 
-                print("Autoencoder Reconstructions scale {}:".format(gan_scale))
                 aac_before = images[:8]
                 aac_after = netG(netE(aac_before, gan_scale), gan_scale)
                 img = torch.cat((aac_before, aac_after))
@@ -173,15 +168,4 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                 imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
             print(log)
-            bps = (i+1) / (time.time() - start_time)
-            ed = errD.data[0]
-            eg = errG.data[0]
-            ec = errC.data[0]
-            er = err_reconstruction.data[0]
-            acc = correct / max(total, 1)
-            msg = '[{}][{}/{}] AAC: {:.3f} D:{:.3f} G:{:.3f} C:{:.3f} Acc. {:.3f} {:.3f} batch/sec'
-            msg = msg.format(
-                  epoch, i+1, len(dataloader),
-                  er, ed, eg, ec, acc, bps)
-            print(msg)
     return True

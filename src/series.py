@@ -6,15 +6,24 @@ class TimeSeries:
     def __str__(self):
         lines = []
         duration = time.time() - self.start_time
-        lines.append("Logged for {:.3f} sec".format(duration))
-        for name in self.series:
-            values = np.array(self.series[name])
-            lines.append("{:<24}:\t{:>8d} points, avg value {:.4f}".format(
-                name, len(values), values.mean()))
+        lines.append("Statistics after {:.3f} sec".format(duration))
+        for name, values in self.series.items():
+            values = np.array(values)
+            name = shorten(name)
+            lines.append("{:>32}:\t{:.4f} {:>8d} points, {:.2f} samples/sec".format(
+                name, values.mean(), len(values), len(values) / duration))
+        lines.append('Predictions:')
+        for name, pred in self.predictions.items():
+            acc = 100 * pred['correct'] / pred['total']
+            name = shorten(name)
+            lines.append('{:>32}:\t{:.2f}% ({}/{})'.format(
+                name, acc, pred['correct'], pred['total']))
+        lines.append('\n')
         return '\n'.join(lines)
 
     def __init__(self):
         self.series = {}
+        self.predictions = {}
         self.start_time = time.time()
 
     def collect(self, name, value):
@@ -23,6 +32,15 @@ class TimeSeries:
         if name not in self.series:
             self.series[name] = []
         self.series[name].append(convert_to_scalar(value))
+
+    def collect_prediction(self, name, logits, ground_truth):
+        if name not in self.predictions:
+            self.predictions[name] = {'correct': 0, 'total': 0}
+        _, pred_idx = logits.max(1)
+        _, label_idx = ground_truth.max(1)
+        correct = convert_to_scalar(sum(pred_idx == label_idx))
+        self.predictions[name]['correct'] += correct
+        self.predictions[name]['total'] += len(ground_truth)
 
 
 # We assume x is a scalar.
@@ -37,3 +55,8 @@ def convert_to_scalar(x):
     except:
         pass
     return 0
+
+def shorten(words, maxlen=30):
+    if len(words) > 27:
+        words = words[:20] + '...' + words[-9:]
+    return words

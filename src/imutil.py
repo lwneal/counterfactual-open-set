@@ -152,7 +152,8 @@ def show(
         fp.write(encode_jpg(pixels))
         fp.flush()
 
-    if display and os.environ.get('IMUTIL_SHOW') and spawn.find_executable('imgcat'):
+    should_show = os.environ.get('IMUTIL_SHOW') and len(os.environ['IMUTIL_SHOW']) > 0 and spawn.find_executable('imgcat')
+    if display and should_show:
         print('\n' * 4)
         print('\033[4F')
         subprocess.check_call(['imgcat', filename])
