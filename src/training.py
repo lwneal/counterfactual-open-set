@@ -144,23 +144,33 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         if i % 10 == 0:
             if i % 100 == 0:
-                #for gan_scale in (8, 4, 2, 1):
-                for gan_scale in [1]:
-                    seed()
-                    fixed_noise = make_noise(gan_scale)
-                    seed(int(time.time()))
-                    print("Generator Samples scale {}:".format(gan_scale))
-                    demo_fakes = netG(fixed_noise, gan_scale)
-                    img = demo_fakes.data[:16]
-                    filename = "{}/images/samples_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
-                    imutil.show(img, filename=filename, resize_to=(256,256), caption="Samples scale {}".format(gan_scale))
+                def image_filename(*args):
+                    image_path = os.path.join(result_dir, 'images')
+                    name = '_'.join(str(s) for s in args)
+                    name += '_{}'.format(int(time.time() * 1000))
+                    return os.path.join(image_path, name) + '.jpg'
 
-                    print("Autoencoder Reconstructions scale {}:".format(gan_scale))
-                    aac_before = images[:8]
-                    aac_after = netG(netE(aac_before, gan_scale), gan_scale)
-                    filename = "{}/images/reconstruction_{}_{}.jpg".format(result_dir, gan_scale, int(time.time()))
-                    img = torch.cat((aac_before, aac_after))
-                    imutil.show(img, filename=filename, resize_to=(256,256), caption="Reconstruction scale {}".format(gan_scale))
+                seed()
+                fixed_noise = make_noise(gan_scale)
+                seed(int(time.time()))
+
+                print("Generator Samples scale {}:".format(gan_scale))
+                demo_fakes = netG(fixed_noise, gan_scale)
+                img = demo_fakes.data[:16]
+
+                filename = image_filename('samples', 'scale', gan_scale)
+                caption = "S scale={} epoch={} iter={}".format(gan_scale, epoch, i)
+                imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
+
+
+                print("Autoencoder Reconstructions scale {}:".format(gan_scale))
+                aac_before = images[:8]
+                aac_after = netG(netE(aac_before, gan_scale), gan_scale)
+                img = torch.cat((aac_before, aac_after))
+
+                filename = image_filename('reconstruction', 'scale', gan_scale)
+                caption = "R scale={} epoch={} iter={}".format(gan_scale, epoch, i)
+                imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
             print(log)
             bps = (i+1) / (time.time() - start_time)
