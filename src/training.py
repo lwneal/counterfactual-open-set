@@ -45,7 +45,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         noise_t = torch.FloatTensor(batch_size, latent_size * scale * scale)
         noise_t.normal_(0, 1)
         noise = Variable(noise_t).cuda()
-        return clamp_to_unit_sphere(noise, scale)
+        return clamp_to_unit_sphere(noise, scale**2)
 
     aux_dataloader = None
     dataset_filename = options.get('aux_dataset')
