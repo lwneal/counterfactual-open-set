@@ -10,18 +10,25 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--result_dir', help='Output directory for images and model checkpoints')
 parser.add_argument('--dataset', required=True, help='Input filename (must be in .dataset format)')
 parser.add_argument('--hypothesis', required=True, help='A helpful description so that a month from now, you can remember why you ran this experiment.')
+
 parser.add_argument('--latent_size', type=int, default=128, help='Size of the latent z vector [default: 128]')
 parser.add_argument('--image_size', type=int, default=32, help='Height / width of images [default: 32]')
 parser.add_argument('--batch_size', type=int, default=64, help='Batch size [default: 64]')
 parser.add_argument('--random_horizontal_flip', type=is_true, default=False, help='Flip images during training. [default: False]')
 parser.add_argument('--delete_background', type=is_true, default=False, help='Delete non-foreground pixels from images [default: False]')
-parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. [default: 0.5]')
+
 parser.add_argument('--weight_decay', type=float, default=.0, help='Optimizer L2 weight decay [default: .0]')
+parser.add_argument('--beta1', type=float, default=0.5, help='Optimizer beta1 for adam. [default: 0.5]')
+
 parser.add_argument('--generator_weight', type=float, default=1.0, help='Multiplier for generator adversarial loss [default: 1.0]')
 parser.add_argument('--discriminator_weight', type=float, default=1.0, help='Multiplier for discriminator adversarial loss [default: 1.0]')
 parser.add_argument('--reconstruction_weight', type=float, default=1.0, help='Multiplier for mean-abs pixel error loss [default: 1.0]')
-parser.add_argument('--cf_speed', type=float, default=.01, help='Counterfactual optimization rate [default: .01]')
-parser.add_argument('--cf_max_iters', type=int, default=100, help='Counterfactual gradient descent steps [default: 100]')
+
+parser.add_argument('--cf_speed', type=float, default=.01, help='Learning rate for counterfactual descent [default: .01]')
+parser.add_argument('--cf_max_iters', type=int, default=100, help='Maximum number of steps to take for CF trajectories [default: 100]')
+parser.add_argument('--cf_distance_weight', type=float, default=1, help='Weight for latent distance loss [default: 1]')
+parser.add_argument('--cf_gan_scale', type=int, default=1, help='Scale, for multiscale GAN')
+
 
 options = vars(parser.parse_args())
 
