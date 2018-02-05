@@ -118,7 +118,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     for i in range(max_iters):
         z = to_torch(z_value, requires_grad=True)
         z_0 = to_torch(z0_value)
-        logits = netC(netG(z, gan_scale), gan_scale)
+        logits = netC(netG(z, gan_scale))
         augmented_logits = F.pad(logits, pad=(0,1))
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
