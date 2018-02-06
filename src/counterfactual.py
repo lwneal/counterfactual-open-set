@@ -84,9 +84,10 @@ def generate_counterfactual(networks, dataloader, **options):
     dummy_class = 0
     video_filename = make_video_filename(result_dir, dataloader, dummy_class, dummy_class, label_type='grid')
 
-    # Save the images in npy format to re-load as training data
+    # Save the images in npy/jpg format as input for the labeling system
     trajectory_filename = video_filename.replace('.mjpeg', '.npy')
     np.save(trajectory_filename, images)
+    imutil.show(images, display=False, filename=video_filename.replace('.mjpeg', '.jpg'))
 
     # Save the images in jpg format to display to the user
     name = 'counterfactual_{}.jpg'.format(int(time.time()))
