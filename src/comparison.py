@@ -12,7 +12,7 @@ def evaluate_with_comparison(networks, dataloader, **options):
 
     if comparison_dataloader:
         openset_results = evaluation.evaluate_openset(networks, dataloader, comparison_dataloader, **options)
-        new_results[options['fold'] + '_openset'] = openset_results
+        new_results[options['fold']].update(openset_results)
     return new_results
 
 
