@@ -96,8 +96,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netE.zero_grad()
 
         # Minimize fakeness of sampled images
-        noise = make_noise(gan_scale)
-        fake_images = netG(noise, gan_scale)
+        # noise = make_noise(gan_scale)
+        # fake_images = netG(noise, gan_scale)
+
+        # Minimize fakeness of autoencoded images
+        fake_images = netG(netE(images, gan_scale), gan_scale)
 
         # Hack: Just use a single class (back to dcgan)
         logits = netD(fake_images)[:,0]
