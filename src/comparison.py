@@ -1,4 +1,20 @@
+import evaluation
 from dataloader import CustomDataloader
+
+
+
+def evaluate_with_comparison(networks, dataloader, **options):
+    comparison_dataloader = get_comparison_dataloader(**options)
+    if comparison_dataloader:
+        options['fold'] = 'openset_{}'.format(comparison_dataloader.dsf.name)
+
+    new_results = evaluation.evaluate_classifier(networks, dataloader, comparison_dataloader, **options)
+
+    if comparison_dataloader:
+        openset_results = evaluation.evaluate_openset(networks, dataloader, comparison_dataloader, **options)
+        new_results[options['fold'] + '_openset'] = openset_results
+    return new_results
+
 
 def get_comparison_dataloader(comparison_dataset=None, **options):
     if not comparison_dataset:

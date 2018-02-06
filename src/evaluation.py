@@ -12,10 +12,6 @@ import imutil
 from sklearn.metrics import roc_curve, auc
 
 
-def to_np(v):
-    return v.data.cpu().numpy()
-
-
 # Returns 1 for items that are known, 0 for unknown
 def predict_openset(networks, images, threshold=0.):
     netC = networks['classifier']
