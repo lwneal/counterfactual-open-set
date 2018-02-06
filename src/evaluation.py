@@ -68,7 +68,6 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
             'openset_recall': float(openset_correct) / (openset_total),
         }
     }
-    pprint(stats)
     return stats
 
 

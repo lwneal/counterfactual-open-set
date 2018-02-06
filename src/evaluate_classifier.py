@@ -20,6 +20,7 @@ from dataloader import CustomDataloader
 from networks import build_networks
 from options import load_options, get_current_epoch
 from evaluation import evaluate_classifier, evaluate_openset, save_evaluation
+from comparison import get_comparison_dataloader
 
 options = load_options(options)
 if not options.get('epoch'):
@@ -30,30 +31,15 @@ dataloader = CustomDataloader(last_batch=True, shuffle=False, **options)
 
 networks = build_networks(dataloader.num_classes, **options)
 
-comparison_dataloader = None
-if options['comparison_dataset']:
-    comparison_options = options.copy()
-    comparison_options['dataset'] = options['comparison_dataset']
-    comparison_dataloader = CustomDataloader(last_batch=True, shuffle=False, **comparison_options)
-    comparison_name = options['comparison_dataset'].split('/')[-1].split('.')[0]
-    labels_dir = os.path.join(options['result_dir'], 'labels')
-    if os.path.exists(labels_dir):
-        label_count = len(os.listdir(labels_dir))
-    else:
-        label_count = 0
-    # Hack: ignore the label count
-    """
-    options['fold'] = 'openset_{}_{:04d}'.format(comparison_name, label_count)
-    """
-    options['fold'] = 'openset_{}'.format(comparison_name)
+comparison_dataloader = get_comparison_dataloader(**options)
+if comparison_dataloader:
+    options['fold'] = 'openset_{}'.format(comparison_dataloader.dsf.name)
 
 new_results = evaluate_classifier(networks, dataloader, comparison_dataloader, **options)
-if options['comparison_dataset']:
+
+if comparison_dataloader:
     openset_results = evaluate_openset(networks, dataloader, comparison_dataloader, **options)
-    pprint(openset_results)
     new_results[options['fold'] + '_openset'] = openset_results
-    new_results[options['fold']]['active_learning_label_count'] = label_count
 
-
+pprint(new_results)
 save_evaluation(new_results, options['result_dir'], options['epoch'])
-
