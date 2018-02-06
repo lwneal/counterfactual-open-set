@@ -53,10 +53,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         print("Using aux_dataset {}".format(dataset_filename))
         aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
 
-    start_time = time.time()
-    correct = 0
-    total = 0
-
     log = TimeSeries()
 
     for i, (images, class_labels) in enumerate(dataloader):
@@ -167,5 +163,62 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                 caption = "R scale={} epoch={} iter={}".format(gan_scale, epoch, i)
                 imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
+            print(log)
+    return True
+
+
+def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
+    for net in networks.values():
+        net.train()
+    netC = networks['classifier']
+    optimizerC = optimizers['classifier']
+    result_dir = options['result_dir']
+    batch_size = options['batch_size']
+    image_size = options['image_size']
+    latent_size = options['latent_size']
+
+    aux_dataloader = None
+    dataset_filename = options.get('aux_dataset')
+    if dataset_filename and os.path.exists(dataset_filename):
+        print("Using aux_dataset {}".format(dataset_filename))
+        aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
+
+    log = TimeSeries()
+
+    for i, (images, class_labels) in enumerate(dataloader):
+        images = Variable(images)
+        labels = Variable(class_labels)
+
+        ############################
+        # Classifier Update
+        ############################
+        netC.zero_grad()
+
+        # Classify real examples into the correct K classes
+        classifier_logits = netC(images)
+        augmented_logits = F.pad(classifier_logits, (0,1))
+        _, labels_idx = labels.max(dim=1)
+        errC = nll_loss(F.log_softmax(augmented_logits, dim=1), labels_idx)
+        errC.backward()
+        log.collect('Classifier Loss', errC)
+
+        # Classify RED labeled aux_dataset as open set
+        aux_images, aux_labels = aux_dataloader.get_batch()
+        classifier_logits = netC(Variable(aux_images))
+        augmented_logits = F.pad(classifier_logits, (0,1))
+        is_positive = Variable(aux_labels.max(dim=1)[0])
+        is_openset = 1 - is_positive
+        log_soft_open = F.log_softmax(augmented_logits)[:, -1] * is_openset
+        errOpenSet = -log_soft_open.sum() / is_openset.sum()
+        errOpenSet.backward()
+        log.collect('Open Set Loss', errOpenSet)
+
+        optimizerC.step()
+        ############################
+
+        # Keep track of accuracy on positive-labeled examples for monitoring
+        log.collect_prediction('Classifier Accuracy', netC(images), labels)
+
+        if i % 10 == 0:
             print(log)
     return True
