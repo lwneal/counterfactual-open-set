@@ -111,7 +111,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ############################
         # Encoder Update
         ###########################
-        # Minimize reconstruction loss (of samples)
+        # Minimize reconstruction loss
         reconstructed = netG(netE(images, gan_scale), gan_scale)
         err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
