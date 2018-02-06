@@ -3,11 +3,15 @@ set -e
 
 pip install -r requirements.txt
 
+# TODO: do this in python, based on --dataset
 if [ ! -f /mnt/data/svhn-04.dataset ]; then
     python src/datasets/download_svhn.py
 fi
 if [ ! -f /mnt/data/cifar10.dataset ]; then
     python src/datasets/download_cifar10.py
+fi
+if [ ! -f /mnt/data/mnist.dataset ]; then
+    python src/datasets/download_mnist.py
 fi
 
 #python src/datasets/download_svhn.py
