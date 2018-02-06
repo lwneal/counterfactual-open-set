@@ -122,11 +122,32 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         augmented_logits = F.pad(logits, pad=(0,1))
 
         cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
-        distance_loss = torch.sum((z - z_0) ** 2) * distance_weight
-        print("Target {} iter {} cf loss {:.4f}, distance loss {:.4f}".format(
-            target_class, i, cf_loss.data[0], distance_loss.data[0]))
+
+        distance_loss = torch.sum(
+                (
+                    z.mean(dim=-1).mean(dim=-1)
+                    -
+                    z_0.mean(dim=-1).mean(dim=-1)
+                ) ** 2
+            ) * distance_weight
+
+        color_loss = torch.sum(
+                (
+                    netG(z, gan_scale).mean(dim=-1).mean(dim=-1)
+                    -
+                    Variable(start_images).mean(dim=-1).mean(dim=-1)
+                ) ** 2
+            ) * 1.0
+
+        total_loss = cf_loss + distance_loss + color_loss
+
+        scores = F.softmax(augmented_logits, dim=1)
+        print("Classification {} {:.4f}".format(
+            target_class, scores[0][target_class].data[0]))
+
+        print("i={:>4d} t={} cf loss {:.4f}, distance loss {:.4f} color_loss {:.4f} score {:.2f}".format(
+            i, target_class, cf_loss.data[0], distance_loss.data[0], color_loss.data[0], scores[0][target_class].data[0]))
         
-        total_loss = cf_loss + distance_loss
         dc_dz = autograd.grad(total_loss, z, total_loss)[0]
         z = z - dc_dz * speed
         z = clamp_to_unit_sphere(z, gan_scale)
