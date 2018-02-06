@@ -137,8 +137,9 @@ def combine_scores(score_list):
 
 
 def save_plot(plot, title, **options):
+    current_epoch = options.get('epoch', 0)
     comparison_name = options['comparison_dataset'].split('/')[-1].replace('.dataset', '')
-    filename = 'plot_{}_vs_{}_epoch_{:04d}.png'.format(title, comparison_name, options['epoch'])
+    filename = 'plot_{}_vs_{}_epoch_{:04d}.png'.format(title, comparison_name, current_epoch)
     filename = os.path.join(options['result_dir'], filename)
     plot.figure.savefig(filename)
     
