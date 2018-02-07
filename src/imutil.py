@@ -122,7 +122,6 @@ def show(
 
     # Resize image to desired shape
     if resize_to:
-        print("Resizing from {} to {}".format(pixels.shape, resize_to))
         if pixels.shape[-1] == 1:
             pixels = pixels.repeat(3, axis=-1)
         img = Image.fromarray(pixels.astype('uint8'))
