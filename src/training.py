@@ -59,28 +59,37 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         images = Variable(images)
         labels = Variable(class_labels)
 
-        gan_scale = 4
+        ac_scale = random.choice([1, 2, 4, 8])
+        sample_scale = 1
         ############################
         # Discriminator Updates
         ###########################
         netD.zero_grad()
 
-        # Hack: Just use a single class (back to dcgan)
         # Classify sampled images as fake
-        noise = make_noise(gan_scale)
-        fake_images = netG(noise, gan_scale)
+        noise = make_noise(sample_scale)
+        fake_images = netG(noise, sample_scale)
         logits = netD(fake_images)[:,0]
-        loss_fake = F.relu(logits).mean()
-        log.collect('Discriminator Loss on Generated Examples', loss_fake)
+        loss_fake_sampled = F.relu(logits).mean()
+        log.collect('Discriminator Sampled', loss_fake_sampled)
+        loss_fake_sampled.backward()
+
+        # Classify autoencoded images as fake
+        more_images, more_labels = dataloader.get_batch()
+        more_images = Variable(more_images)
+        fake_images = netG(netE(more_images, ac_scale), ac_scale)
+        logits_fake = netD(fake_images)[:,0]
+        loss_fake = F.relu(logits_fake)
+        log.collect('Discriminator Autoencoded', loss_fake)
 
         # Classify real examples as real
         logits = netD(images)[:,0]
         loss_real = F.relu(-logits).mean()
-        log.collect('Discriminator Loss on Real Examples', loss_real)
+        log.collect('Discriminator Real', loss_real)
 
         errD = (loss_real.mean() + loss_fake.mean()) * options['discriminator_weight']
         errD.backward()
-        log.collect('Discriminator Loss Total', errD)
+        log.collect('Discriminator Total', errD)
 
         optimizerD.step()
         ############################
@@ -92,23 +101,25 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netE.zero_grad()
 
         # Minimize fakeness of sampled images
-        # noise = make_noise(gan_scale)
-        # fake_images = netG(noise, gan_scale)
+        noise = make_noise(sample_scale)
+        fake_images_sampled = netG(noise, sample_scale)
+        logits = netD(fake_images_sampled)[:,0]
+        errSampled = F.softplus(-logits).mean() * options['generator_weight']
+        errSampled.backward()
+        log.collect('Generator Sampled', errSampled)
 
         # Minimize fakeness of autoencoded images
-        fake_images = netG(netE(images, gan_scale), gan_scale)
-
-        # Hack: Just use a single class (back to dcgan)
+        fake_images = netG(netE(images, sample_scale), sample_scale)
         logits = netD(fake_images)[:,0]
-        errG = F.relu(-logits).mean() * options['generator_weight']
+        errG = F.softplus(-logits).mean() * options['generator_weight']
         errG.backward()
-        log.collect('Generator Loss', errG)
+        log.collect('Generator Autoencoded', errG)
 
         ############################
         # Encoder Update
         ###########################
         # Minimize reconstruction loss
-        reconstructed = netG(netE(images, gan_scale), gan_scale)
+        reconstructed = netG(netE(images, ac_scale), ac_scale)
         err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
         log.collect('Pixel Reconstruction Loss', err_reconstruction)
@@ -124,7 +135,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         # Classify real examples into the correct K classes with hinge loss
         classifier_logits = netC(images) 
-        errC = F.relu(classifier_logits * -labels).mean()
+        errC = F.softplus(classifier_logits * -labels).mean()
         errC.backward()
         log.collect('Classifier Loss', errC)
 
@@ -133,11 +144,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         # Keep track of accuracy on positive-labeled examples for monitoring
         log.collect_prediction('Classifier Accuracy', netC(images), labels)
-        log.collect_prediction('Discriminator Accuracy, Real Data', netD(images), labels)
+        #log.collect_prediction('Discriminator Accuracy, Real Data', netD(images), labels)
 
         log.print_every()
 
-        if i % 1000 == 0:
+        if i % 100 == 0:
             def image_filename(*args):
                 image_path = os.path.join(result_dir, 'images')
                 name = '_'.join(str(s) for s in args)
@@ -145,23 +156,23 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
                 return os.path.join(image_path, name) + '.jpg'
 
             seed()
-            fixed_noise = make_noise(gan_scale)
+            fixed_noise = make_noise(sample_scale)
             seed(int(time.time()))
 
-            demo_fakes = netG(fixed_noise, gan_scale)
+            demo_fakes = netG(fixed_noise, sample_scale)
             img = demo_fakes.data[:16]
 
-            filename = image_filename('samples', 'scale', gan_scale)
-            caption = "S scale={} epoch={} iter={}".format(gan_scale, epoch, i)
+            filename = image_filename('samples', 'scale', sample_scale)
+            caption = "S scale={} epoch={} iter={}".format(sample_scale, epoch, i)
             imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
 
             aac_before = images[:8]
-            aac_after = netG(netE(aac_before, gan_scale), gan_scale)
+            aac_after = netG(netE(aac_before, ac_scale), ac_scale)
             img = torch.cat((aac_before, aac_after))
 
-            filename = image_filename('reconstruction', 'scale', gan_scale)
-            caption = "R scale={} epoch={} iter={}".format(gan_scale, epoch, i)
+            filename = image_filename('reconstruction', 'scale', ac_scale)
+            caption = "R scale={} epoch={} iter={}".format(ac_scale, epoch, i)
             imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
     return True
 
