@@ -28,6 +28,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
     result_dir = options['result_dir']
     image_size = options['image_size']
     latent_size = options['latent_size']
+    fold = options.get('fold', 'evaluation')
 
     classification_closed_correct = 0
     classification_correct = 0
@@ -57,7 +58,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
             openset_total += len(labels)
 
     stats = {
-        options['fold']: {
+        fold: {
             'accuracy': float(classification_correct + openset_correct) / (classification_total + openset_total),
             'classification_accuracy': float(classification_correct) / (classification_total),
             'closed_set_accuracy': float(classification_closed_correct) / (classification_total),
