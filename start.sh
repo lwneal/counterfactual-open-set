@@ -13,6 +13,12 @@ fi
 if [ ! -f /mnt/data/mnist.dataset ]; then
     python src/datasets/download_mnist.py
 fi
+if [ ! -f /mnt/data/oxford102.dataset ]; then
+    python src/datasets/download_oxford102.py
+fi
+if [ ! -f /mnt/data/celeba.dataset ]; then
+    python src/datasets/download_celeba.py
+fi
 
 #python src/datasets/download_svhn.py
 #python src/datasets/download_mnist.py
