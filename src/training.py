@@ -135,35 +135,34 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log.collect_prediction('Classifier Accuracy', netC(images), labels)
         log.collect_prediction('Discriminator Accuracy, Real Data', netD(images), labels)
 
-        if i % 10 == 0:
-            if i % 100 == 0:
-                def image_filename(*args):
-                    image_path = os.path.join(result_dir, 'images')
-                    name = '_'.join(str(s) for s in args)
-                    name += '_{}'.format(int(time.time() * 1000))
-                    return os.path.join(image_path, name) + '.jpg'
+        log.print_every()
 
-                seed()
-                fixed_noise = make_noise(gan_scale)
-                seed(int(time.time()))
+        if i % 1000 == 0:
+            def image_filename(*args):
+                image_path = os.path.join(result_dir, 'images')
+                name = '_'.join(str(s) for s in args)
+                name += '_{}'.format(int(time.time() * 1000))
+                return os.path.join(image_path, name) + '.jpg'
 
-                demo_fakes = netG(fixed_noise, gan_scale)
-                img = demo_fakes.data[:16]
+            seed()
+            fixed_noise = make_noise(gan_scale)
+            seed(int(time.time()))
 
-                filename = image_filename('samples', 'scale', gan_scale)
-                caption = "S scale={} epoch={} iter={}".format(gan_scale, epoch, i)
-                imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
+            demo_fakes = netG(fixed_noise, gan_scale)
+            img = demo_fakes.data[:16]
+
+            filename = image_filename('samples', 'scale', gan_scale)
+            caption = "S scale={} epoch={} iter={}".format(gan_scale, epoch, i)
+            imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
 
-                aac_before = images[:8]
-                aac_after = netG(netE(aac_before, gan_scale), gan_scale)
-                img = torch.cat((aac_before, aac_after))
+            aac_before = images[:8]
+            aac_after = netG(netE(aac_before, gan_scale), gan_scale)
+            img = torch.cat((aac_before, aac_after))
 
-                filename = image_filename('reconstruction', 'scale', gan_scale)
-                caption = "R scale={} epoch={} iter={}".format(gan_scale, epoch, i)
-                imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
-
-            print(log)
+            filename = image_filename('reconstruction', 'scale', gan_scale)
+            caption = "R scale={} epoch={} iter={}".format(gan_scale, epoch, i)
+            imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
     return True
 
 
@@ -219,6 +218,6 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         # Keep track of accuracy on positive-labeled examples for monitoring
         log.collect_prediction('Classifier Accuracy', netC(images), labels)
 
-        if i % 10 == 0:
-            print(log)
+        log.print_every()
+
     return True

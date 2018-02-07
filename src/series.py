@@ -4,27 +4,13 @@ import time
 
 class TimeSeries:
     def __str__(self):
-        lines = []
-        duration = time.time() - self.start_time
-        lines.append("Statistics after {:.3f} sec".format(duration))
-        for name, values in self.series.items():
-            values = np.array(values)
-            name = shorten(name)
-            lines.append("{:>32}:\t{:.4f} {:>8d} points, {:.2f} samples/sec".format(
-                name, values.mean(), len(values), len(values) / duration))
-        lines.append('Predictions:')
-        for name, pred in self.predictions.items():
-            acc = 100 * pred['correct'] / pred['total']
-            name = shorten(name)
-            lines.append('{:>32}:\t{:.2f}% ({}/{})'.format(
-                name, acc, pred['correct'], pred['total']))
-        lines.append('\n')
-        return '\n'.join(lines)
+        return self.format_all()
 
     def __init__(self):
         self.series = {}
         self.predictions = {}
         self.start_time = time.time()
+        self.last_printed_at = time.time()
 
     def collect(self, name, value):
         if not self.series:
@@ -41,6 +27,29 @@ class TimeSeries:
         correct = convert_to_scalar(sum(pred_idx == label_idx))
         self.predictions[name]['correct'] += correct
         self.predictions[name]['total'] += len(ground_truth)
+
+    def print_every(self, n_sec=4):
+        if time.time() - self.last_printed_at > n_sec:
+            print(self.format_all())
+            self.last_printed_at = time.time()
+
+    def format_all(self):
+        lines = []
+        duration = time.time() - self.start_time
+        lines.append("Statistics after {:.3f} sec".format(duration))
+        for name, values in self.series.items():
+            values = np.array(values)
+            name = shorten(name)
+            lines.append("{:>32}:\t{:.4f} {:>8d} points, {:.2f} samples/sec".format(
+                name, values.mean(), len(values), len(values) / duration))
+        lines.append('Predictions:')
+        for name, pred in self.predictions.items():
+            acc = 100 * pred['correct'] / pred['total']
+            name = shorten(name)
+            lines.append('{:>32}:\t{:.2f}% ({}/{})'.format(
+                name, acc, pred['correct'], pred['total']))
+        lines.append('\n')
+        return '\n'.join(lines)
 
 
 # We assume x is a scalar.
