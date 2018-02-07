@@ -51,7 +51,10 @@ class TimeSeries:
             lines.append('{:>32}:\t{:.2f}% ({}/{})'.format(
                 name, acc, pred['correct'], pred['total']))
         lines.append('\n')
-        return '\n'.join(lines)
+        text = '\n'.join(lines)
+        # Cache the most recent printed text to a file
+        open('.last_summary.log', 'w').write(text)
+        return text
 
 
 # We assume x is a scalar.
