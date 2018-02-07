@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import whattimeisit
 
 
 class TimeSeries:
@@ -36,7 +37,8 @@ class TimeSeries:
     def format_all(self):
         lines = []
         duration = time.time() - self.start_time
-        lines.append("Statistics after {:.3f} sec".format(duration))
+        lines.append("Statistics for {:.3f} sec ending {}".format(
+            duration, whattimeisit()))
         for name, values in self.series.items():
             values = np.array(values)
             name = shorten(name)
