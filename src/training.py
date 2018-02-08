@@ -109,7 +109,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log.collect('Generator Sampled', errSampled)
 
         # Minimize fakeness of autoencoded images
-        fake_images = netG(netE(images, sample_scale), sample_scale)
+        fake_images = netG(netE(images, ac_scale), ac_scale)
         logits = netD(fake_images)[:,0]
         errG = F.softplus(-logits).mean() * options['generator_weight']
         errG.backward()
