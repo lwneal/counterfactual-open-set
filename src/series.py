@@ -37,14 +37,17 @@ class TimeSeries:
     def format_all(self):
         lines = ['']
         duration = time.time() - self.start_time
-        lines.append("Statistics for {:.3f} sec ending {}".format(
+        lines.append("Collected {:.3f} sec ending {}".format(
             duration, whattimeisit()))
+        lines.append("Max Rate {:.2f}/sec".format(self.get_rate()))
+        lines.append("{:>32}{:>12}{:>14}".format('Name', 'Avg.', 'Last 10'))
         for name in sorted(self.series):
             values = np.array(self.series[name])
             name = shorten(name)
-            lines.append("{:>32}:\t{:.4f} {:>8d} points, {:.2f} samples/sec".format(
-                name, values.mean(), len(values), len(values) / duration))
-        lines.append('Predictions:')
+            lines.append("{:>32}:      {:.4f}      {:.4f}".format(
+                name, values.mean(), values[-10:].mean()))
+        if self.predictions:
+            lines.append('Predictions:')
         for name, pred in self.predictions.items():
             acc = 100 * pred['correct'] / pred['total']
             name = shorten(name)
@@ -55,6 +58,10 @@ class TimeSeries:
         # Cache the most recent printed text to a file
         open('.last_summary.log', 'w').write(text)
         return text
+
+    def get_rate(self):
+        return max([len(c) for c in self.series]) / (time.time() - self.start_time)
+
 
 
 # We assume x is a scalar.
