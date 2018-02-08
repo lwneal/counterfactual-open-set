@@ -11,6 +11,7 @@ from torch.nn.functional import nll_loss, cross_entropy
 from vector import gen_noise, clamp_to_unit_sphere
 import imutil
 from imutil import VideoMaker
+from series import TimeSeries
 
 
 def to_torch(z, requires_grad=False):
@@ -116,6 +117,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     target_label = Variable(torch.LongTensor(cf_batch_size)).cuda()
     target_label[:] = target_class
 
+    log = TimeSeries()
     for i in range(max_iters):
         z = to_torch(z_value, requires_grad=True)
         z_0 = to_torch(z0_value)
@@ -132,6 +134,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
                 ) ** 2
             ) * distance_weight
 
+        # This term is kind of a hack and I'd like to remove it
         color_loss = torch.sum(
                 (
                     netG(z, gan_scale).mean(dim=-1).mean(dim=-1)
@@ -143,12 +146,13 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         total_loss = cf_loss + distance_loss + color_loss
 
         scores = F.softmax(augmented_logits, dim=1)
-        print("Classification {} {:.4f}".format(
-            target_class, scores[0][target_class].data[0]))
 
-        print("i={:>4d} t={} cf loss {:.4f}, distance loss {:.4f} color_loss {:.4f} score {:.2f}".format(
-            i, target_class, cf_loss.data[0], distance_loss.data[0], color_loss.data[0], scores[0][target_class].data[0]))
-        
+        log.collect('Counterfactual loss', cf_loss)
+        log.collect('Distance Loss', distance_loss)
+        log.collect('Color Loss (hack)', color_loss)
+        log.collect('Classification as {}'.format(target_class), scores[0][target_class])
+        log.print_every(n_sec=1)
+
         dc_dz = autograd.grad(total_loss, z, total_loss)[0]
         z = z - dc_dz * speed
         z = clamp_to_unit_sphere(z, gan_scale)
@@ -158,6 +162,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         # See https://github.com/pytorch/pytorch/issues/4661
         z_value = to_np(z)
         del z
+    print(log)
     z = to_torch(z_value)
 
     images = netG(z, gan_scale)
