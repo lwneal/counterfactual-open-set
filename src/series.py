@@ -35,12 +35,12 @@ class TimeSeries:
             self.last_printed_at = time.time()
 
     def format_all(self):
-        lines = []
+        lines = ['']
         duration = time.time() - self.start_time
         lines.append("Statistics for {:.3f} sec ending {}".format(
             duration, whattimeisit()))
-        for name, values in self.series.items():
-            values = np.array(values)
+        for name in sorted(self.series):
+            values = np.array(self.series[name])
             name = shorten(name)
             lines.append("{:>32}:\t{:.4f} {:>8d} points, {:.2f} samples/sec".format(
                 name, values.mean(), len(values), len(values) / duration))
