@@ -20,4 +20,4 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-python src/train_gan.py --epochs 100 2>&1 | tee -a stdout.txt
+python src/train_gan.py --epochs 10 2>&1 | tee -a stdout.txt
