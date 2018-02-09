@@ -70,26 +70,25 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         noise = make_noise(sample_scale)
         fake_images = netG(noise, sample_scale)
         logits = netD(fake_images)[:,0]
-        loss_fake_sampled = F.relu(logits).mean()
+        loss_fake_sampled = F.softplus(logits).mean()
         log.collect('Discriminator Sampled', loss_fake_sampled)
         loss_fake_sampled.backward()
 
-        # Classify autoencoded images as fake
-        more_images, more_labels = dataloader.get_batch()
-        more_images = Variable(more_images)
-        fake_images = netG(netE(more_images, ac_scale), ac_scale)
-        logits_fake = netD(fake_images)[:,0]
-        loss_fake = F.relu(logits_fake)
-        log.collect('Discriminator Autoencoded', loss_fake)
+        if False:
+            # Classify autoencoded images as fake
+            more_images, more_labels = dataloader.get_batch()
+            more_images = Variable(more_images)
+            fake_images = netG(netE(more_images, ac_scale), ac_scale)
+            logits_fake = netD(fake_images)[:,0]
+            loss_fake_ac = F.softplus(logits_fake) * options['discriminator_weight']
+            log.collect('Discriminator Autoencoded', loss_fake_ac)
+            loss_fake_ac.backward()
 
         # Classify real examples as real
         logits = netD(images)[:,0]
-        loss_real = F.relu(-logits).mean()
+        loss_real = F.softplus(-logits).mean() * options['discriminator_weight']
+        loss_real.backward()
         log.collect('Discriminator Real', loss_real)
-
-        errD = (loss_real.mean() + loss_fake.mean()) * options['discriminator_weight']
-        errD.backward()
-        log.collect('Discriminator Total', errD)
 
         optimizerD.step()
         ############################
@@ -100,13 +99,14 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netG.zero_grad()
         netE.zero_grad()
 
-        # Minimize fakeness of sampled images
-        noise = make_noise(sample_scale)
-        fake_images_sampled = netG(noise, sample_scale)
-        logits = netD(fake_images_sampled)[:,0]
-        errSampled = F.softplus(-logits).mean() * options['generator_weight']
-        errSampled.backward()
-        log.collect('Generator Sampled', errSampled)
+        if False:
+            # Minimize fakeness of sampled images
+            noise = make_noise(sample_scale)
+            fake_images_sampled = netG(noise, sample_scale)
+            logits = netD(fake_images_sampled)[:,0]
+            errSampled = F.softplus(-logits).mean() * options['generator_weight']
+            errSampled.backward()
+            log.collect('Generator Sampled', errSampled)
 
         # Minimize fakeness of autoencoded images
         fake_images = netG(netE(images, ac_scale), ac_scale)
