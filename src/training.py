@@ -41,12 +41,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     image_size = options['image_size']
     latent_size = options['latent_size']
 
-    def make_noise(scale):
-        noise_t = torch.FloatTensor(batch_size, latent_size * scale * scale)
-        noise_t.normal_(0, 1)
-        noise = Variable(noise_t).cuda()
-        return clamp_to_unit_sphere(noise, scale**2)
-
     aux_dataloader = None
     dataset_filename = options.get('aux_dataset')
     if dataset_filename and os.path.exists(dataset_filename):
@@ -67,7 +61,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netD.zero_grad()
 
         # Classify sampled images as fake
-        noise = make_noise(sample_scale)
+        noise = make_noise(latent_size, sample_scale)
         fake_images = netG(noise, sample_scale)
         logits = netD(fake_images)[:,0]
         loss_fake_sampled = F.softplus(logits).mean()
@@ -101,7 +95,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         if False:
             # Minimize fakeness of sampled images
-            noise = make_noise(sample_scale)
+            noise = make_noise(latent_size, sample_scale)
             fake_images_sampled = netG(noise, sample_scale)
             logits = netD(fake_images_sampled)[:,0]
             errSampled = F.softplus(-logits).mean() * options['generator_weight']
@@ -149,32 +143,46 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log.print_every()
 
         if i % 100 == 0:
-            def image_filename(*args):
-                image_path = os.path.join(result_dir, 'images')
-                name = '_'.join(str(s) for s in args)
-                name += '_{}'.format(int(time.time() * 1000))
-                return os.path.join(image_path, name) + '.jpg'
+            demo(networks, ac_scale, sample_scale, result_dir)
 
-            seed()
-            fixed_noise = make_noise(sample_scale)
-            seed(int(time.time()))
-
-            demo_fakes = netG(fixed_noise, sample_scale)
-            img = demo_fakes.data[:16]
-
-            filename = image_filename('samples', 'scale', sample_scale)
-            caption = "S scale={} epoch={} iter={}".format(sample_scale, epoch, i)
-            imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
-
-
-            aac_before = images[:8]
-            aac_after = netG(netE(aac_before, ac_scale), ac_scale)
-            img = torch.cat((aac_before, aac_after))
-
-            filename = image_filename('reconstruction', 'scale', ac_scale)
-            caption = "R scale={} epoch={} iter={}".format(ac_scale, epoch, i)
-            imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
     return True
+
+
+def make_noise(latent_size, scale):
+    noise_t = torch.FloatTensor(batch_size, latent_size * scale * scale)
+    noise_t.normal_(0, 1)
+    noise = Variable(noise_t).cuda()
+    return clamp_to_unit_sphere(noise, scale**2)
+
+
+def demo(networks, ac_scale, sample_scale, result_dir):
+    netE = networks['encoder']
+    netG = networks['generator']
+
+    def image_filename(*args):
+        image_path = os.path.join(result_dir, 'images')
+        name = '_'.join(str(s) for s in args)
+        name += '_{}'.format(int(time.time() * 1000))
+        return os.path.join(image_path, name) + '.jpg'
+
+    seed()
+    fixed_noise = make_noise(latent_size, sample_scale)
+    seed(int(time.time()))
+
+    demo_fakes = netG(fixed_noise, sample_scale)
+    img = demo_fakes.data[:16]
+
+    filename = image_filename('samples', 'scale', sample_scale)
+    caption = "S scale={} epoch={} iter={}".format(sample_scale, epoch, i)
+    imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
+
+    aac_before = images[:8]
+    aac_after = netG(netE(aac_before, ac_scale), ac_scale)
+    img = torch.cat((aac_before, aac_after))
+
+    filename = image_filename('reconstruction', 'scale', ac_scale)
+    caption = "R scale={} epoch={} iter={}".format(ac_scale, epoch, i)
+    imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
 
 def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
