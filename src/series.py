@@ -1,7 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import numpy as np
 import time
 import whattimeisit
+
+
+def sparkline(data, length=16):
+    BARS = u'▁▂▃▅▆▇'
+    step = len(data) / length
+    samples = [data[int(i)] for i in np.arange(0, len(data), step)]
+    incr = min(samples)
+    width = (max(samples) - min(samples)) / (len(BARS) - 1)
+    bins = [i*width+incr for i in range(len(BARS))]
+    indexes = [i for n in samples
+                       for i, thres in enumerate(bins)
+                                  if thres <= n < thres+width]
+    return ''.join(BARS[i] for i in indexes)
 
 
 class TimeSeries:
@@ -48,8 +63,8 @@ class TimeSeries:
         for name in sorted(self.series):
             values = np.array(self.series[name])
             name = shorten(name)
-            lines.append("{:>32}:      {:.4f}      {:.4f}".format(
-                name, values.mean(), values[-10:].mean()))
+            lines.append("{:>32}:      {:.4f}      {:.4f} {}".format(
+                name, values.mean(), values[-10:].mean(), sparkline(values)))
         if self.predictions:
             lines.append('Predictions:')
         for name, pred in self.predictions.items():
