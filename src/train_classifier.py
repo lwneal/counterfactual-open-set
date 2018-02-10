@@ -32,7 +32,7 @@ for epoch in range(start_epoch, start_epoch + options['epochs']):
     train_classifier(networks, optimizers, dataloader, epoch=epoch, **options)
     eval_results = evaluate_with_comparison(networks, eval_dataloader, **options)
     pprint(eval_results)
-    save_evaluation(eval_results, options['result_dir'], options['epoch'])
+    save_evaluation(eval_results, options['result_dir'], epoch)
     if epoch % 10 == 0:
         save_networks(networks, epoch, options['result_dir'])
 
