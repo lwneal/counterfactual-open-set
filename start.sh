@@ -1,5 +1,12 @@
 #!/bin/bash
+# Stop script if any command returns an error code
 set -e
+
+# Output stdout with no buffering, so it can be piped
+export PYTHONUNBUFFERED=1
+
+# Do not show images in-terminal, even if imgcat is installed
+export IMUTIL_SHOW=""
 
 pip install -r requirements.txt
 
@@ -20,11 +27,10 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-GAN_EPOCHS=30
-CLASSIFIER_EPOCHS=30
-CF_COUNT=200
+GAN_EPOCHS=10
+CLASSIFIER_EPOCHS=10
+CF_COUNT=100
 
-export IMUTIL_SHOW=""
 
 # Train the intial generative model (E+G+D+C)
 python src/train_gan.py --epochs $GAN_EPOCHS 2>&1 | tee -a stdout.txt
