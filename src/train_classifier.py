@@ -19,6 +19,7 @@ from networks import build_networks, save_networks, get_optimizers
 from options import load_options, get_current_epoch
 from counterfactual import generate_counterfactual
 from comparison import evaluate_with_comparison
+from evaluation import save_evaluation
 
 options = load_options(options)
 dataloader = FlexibleCustomDataloader(fold='train', **options)
@@ -30,7 +31,11 @@ eval_dataloader = CustomDataloader(last_batch=True, shuffle=False, fold='test', 
 start_epoch = get_current_epoch(options['result_dir']) + 1
 for epoch in range(start_epoch, start_epoch + options['epochs']):
     train_classifier(networks, optimizers, dataloader, epoch=epoch, **options)
-    # TODO: Deal with wasteful copies of the non-classifier networks
-    save_networks(networks, epoch, options['result_dir'])
     eval_results = evaluate_with_comparison(networks, eval_dataloader, **options)
     pprint(eval_results)
+    save_evaluation(new_results, options['result_dir'], options['epoch'])
+    if epoch % 10 == 0:
+        save_networks(networks, epoch, options['result_dir'])
+
+# TODO: Deal with wasteful copies of the non-classifier networks
+save_networks(networks, epoch, options['result_dir'])
