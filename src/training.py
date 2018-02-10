@@ -1,28 +1,14 @@
 import time
 import os
 import torch
-import torch.nn as nn
 import random
-import numpy as np
-from torchvision import models
-from torch.autograd import Variable
-from torch.nn.functional import nll_loss, binary_cross_entropy
 import torch.nn.functional as F
-from torch.nn.functional import softmax, log_softmax, relu
+from torch.autograd import Variable
+
 import imutil
-from vector import gen_noise, clamp_to_unit_sphere
+from vector import make_noise
 from dataloader import FlexibleCustomDataloader
 from series import TimeSeries
-
-
-def seed(val=42):
-    np.random.seed(val)
-    torch.manual_seed(val)
-    torch.cuda.manual_seed(val)
-
-
-def log_sum_exp(inputs, dim=None, keepdim=False):
-    return inputs - log_softmax(inputs, dim=1)
 
 
 def train_gan(networks, optimizers, dataloader, epoch=None, **options):
@@ -38,16 +24,9 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     optimizerC = optimizers['classifier']
     result_dir = options['result_dir']
     batch_size = options['batch_size']
-    image_size = options['image_size']
     latent_size = options['latent_size']
 
-    aux_dataloader = None
-    dataset_filename = options.get('aux_dataset')
-    if dataset_filename and os.path.exists(dataset_filename):
-        print("Using aux_dataset {}".format(dataset_filename))
-        aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
-
-    log = TimeSeries()
+    log = TimeSeries('Training GAN')
 
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)
@@ -61,7 +40,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netD.zero_grad()
 
         # Classify sampled images as fake
-        noise = make_noise(latent_size, sample_scale)
+        noise = make_noise(batch_size, latent_size, sample_scale)
         fake_images = netG(noise, sample_scale)
         logits = netD(fake_images)[:,0]
         loss_fake_sampled = F.softplus(logits).mean()
@@ -95,7 +74,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         if False:
             # Minimize fakeness of sampled images
-            noise = make_noise(latent_size, sample_scale)
+            noise = make_noise(batch_size, latent_size, sample_scale)
             fake_images_sampled = netG(noise, sample_scale)
             logits = netD(fake_images_sampled)[:,0]
             errSampled = F.softplus(-logits).mean() * options['generator_weight']
@@ -143,19 +122,12 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log.print_every()
 
         if i % 100 == 0:
-            demo(networks, ac_scale, sample_scale, result_dir)
-
+            fixed_noise = make_noise(batch_size, latent_size, sample_scale, fixed_seed=42)
+            demo(networks, images, fixed_noise, ac_scale, sample_scale, result_dir, epoch, i)
     return True
 
 
-def make_noise(latent_size, scale):
-    noise_t = torch.FloatTensor(batch_size, latent_size * scale * scale)
-    noise_t.normal_(0, 1)
-    noise = Variable(noise_t).cuda()
-    return clamp_to_unit_sphere(noise, scale**2)
-
-
-def demo(networks, ac_scale, sample_scale, result_dir):
+def demo(networks, images, fixed_noise, ac_scale, sample_scale, result_dir, epoch=0, idx=0):
     netE = networks['encoder']
     netG = networks['generator']
 
@@ -165,15 +137,11 @@ def demo(networks, ac_scale, sample_scale, result_dir):
         name += '_{}'.format(int(time.time() * 1000))
         return os.path.join(image_path, name) + '.jpg'
 
-    seed()
-    fixed_noise = make_noise(latent_size, sample_scale)
-    seed(int(time.time()))
-
     demo_fakes = netG(fixed_noise, sample_scale)
     img = demo_fakes.data[:16]
 
     filename = image_filename('samples', 'scale', sample_scale)
-    caption = "S scale={} epoch={} iter={}".format(sample_scale, epoch, i)
+    caption = "S scale={} epoch={} iter={}".format(sample_scale, epoch, idx)
     imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
     aac_before = images[:8]
@@ -181,7 +149,7 @@ def demo(networks, ac_scale, sample_scale, result_dir):
     img = torch.cat((aac_before, aac_after))
 
     filename = image_filename('reconstruction', 'scale', ac_scale)
-    caption = "R scale={} epoch={} iter={}".format(ac_scale, epoch, i)
+    caption = "R scale={} epoch={} iter={}".format(ac_scale, epoch, idx)
     imutil.show(img, filename=filename, resize_to=(256,256), caption=caption)
 
 
@@ -190,10 +158,8 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         net.train()
     netC = networks['classifier']
     optimizerC = optimizers['classifier']
-    result_dir = options['result_dir']
     batch_size = options['batch_size']
     image_size = options['image_size']
-    latent_size = options['latent_size']
 
     aux_dataloader = None
     dataset_filename = options.get('aux_dataset')
@@ -201,7 +167,7 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         print("Using aux_dataset {}".format(dataset_filename))
         aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
 
-    log = TimeSeries()
+    log = TimeSeries('Training Classifier')
 
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)
@@ -216,7 +182,7 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         classifier_logits = netC(images)
         augmented_logits = F.pad(classifier_logits, (0,1))
         _, labels_idx = labels.max(dim=1)
-        errC = nll_loss(F.log_softmax(augmented_logits, dim=1), labels_idx)
+        errC = F.nll_loss(F.log_softmax(augmented_logits, dim=1), labels_idx)
         errC.backward()
         log.collect('Classifier Loss', errC)
 

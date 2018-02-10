@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import time
 import whattimeisit
@@ -7,11 +8,12 @@ class TimeSeries:
     def __str__(self):
         return self.format_all()
 
-    def __init__(self):
+    def __init__(self, title=None):
         self.series = {}
         self.predictions = {}
         self.start_time = time.time()
         self.last_printed_at = time.time()
+        self.title = title
 
     def collect(self, name, value):
         if not self.series:
@@ -36,6 +38,8 @@ class TimeSeries:
 
     def format_all(self):
         lines = ['']
+        if self.title:
+            lines.append(self.title)
         duration = time.time() - self.start_time
         lines.append("Collected {:.3f} sec ending {}".format(
             duration, whattimeisit()))
@@ -62,6 +66,11 @@ class TimeSeries:
     def get_rate(self):
         return max([len(c) for c in self.series]) / (time.time() - self.start_time)
 
+    def write_to_file(self):
+        filename = 'timeseries.{}.npy'.format(int(time.time()))
+        ts = np.array(self.series[0])
+        ts.save(filename)
+        sys.stderr.write('Wrote array shape {} to file {}\n'.format(ts.shape, filename))
 
 
 # We assume x is a scalar.

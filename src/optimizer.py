@@ -11,16 +11,11 @@ Arguments:
     dataset: Eg. mnist, cifar10
 """
 import os
-import uuid
 import sys
 import random
 import json
-import rq
-import pickle
-import time
 import numpy as np
 from docopt import docopt
-from subprocess import check_call
 from pprint import pprint
 
 

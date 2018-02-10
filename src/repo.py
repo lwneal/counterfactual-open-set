@@ -1,7 +1,6 @@
 import os
 import subprocess
 import shutil
-from pprint import pprint
 
 
 def mkdirp(path):

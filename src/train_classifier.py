@@ -17,7 +17,6 @@ from dataloader import CustomDataloader, FlexibleCustomDataloader
 from training import train_classifier
 from networks import build_networks, save_networks, get_optimizers
 from options import load_options, get_current_epoch
-from counterfactual import generate_counterfactual
 from comparison import evaluate_with_comparison
 from evaluation import save_evaluation
 

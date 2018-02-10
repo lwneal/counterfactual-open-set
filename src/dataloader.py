@@ -1,9 +1,7 @@
 import math
-import time
 import torch
 from dataset_file import DatasetFile
 from converter import ImageConverter, LabelConverter, FlexibleLabelConverter
-from torchvision import transforms
 
 
 class CustomDataloader(object):
@@ -69,7 +67,7 @@ class CustomDataloader(object):
         return self.dsf.count(self.fold)
 
     def class_name(self, idx):
-        return lab_conv.labels[idx]
+        return self.lab_conv.labels[idx]
 
 
 class FlexibleCustomDataloader(CustomDataloader):
