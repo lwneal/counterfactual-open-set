@@ -161,11 +161,11 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
     batch_size = options['batch_size']
     image_size = options['image_size']
 
-    aux_dataloader = None
     dataset_filename = options.get('aux_dataset')
-    if dataset_filename and os.path.exists(dataset_filename):
-        print("Using aux_dataset {}".format(dataset_filename))
-        aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
+    if not dataset_filename or not os.path.exists(dataset_filename):
+        raise ValueError("Aux Dataset not available")
+    print("Using aux_dataset {}".format(dataset_filename))
+    aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
 
     log = TimeSeries('Training Classifier')
 
