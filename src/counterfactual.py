@@ -22,37 +22,6 @@ def to_np(z):
     return z.data.cpu().numpy()
 
 
-# Just picks ground-truth examples with the right labels
-def rejection_sample(networks, dataloader, **options):
-    result_dir = options['result_dir']
-
-    # Generate a K by K square grid of examples, one column per class
-    K = dataloader.num_classes
-    images = [[] for _ in range(N)]
-    for img_batch, label_batch, _ in dataloader:
-        for img, label in zip(img_batch, label_batch):
-            if label < N and len(images[label]) < N:
-                images[label].append(img.cpu().numpy())
-        if all(len(images[i]) == N for i in range(N)):
-            break
-
-    flat = []
-    for i in range(N):
-        for j in range(N):
-            flat.append(images[j][i])
-    images = flat
-
-    images = np.array(images).transpose((0,2,3,1))
-    start_class = 0
-    video_filename = make_video_filename(result_dir, dataloader, start_class, start_class, label_type='grid')
-    # Save the images in npy format to re-load as training data
-    trajectory_filename = video_filename.replace('.mjpeg', '.npy')
-    np.save(trajectory_filename, images)
-    # Save the images in jpg format to display to the user
-    imutil.show(images, filename=video_filename.replace('.mjpeg', '.jpg'))
-    return images
-
-
 # Generates 'counterfactual' images for each class, by gradient descent of the class
 def generate_counterfactual(networks, dataloader, **options):
     """
