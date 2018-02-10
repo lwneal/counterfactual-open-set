@@ -216,10 +216,8 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         aux_images, aux_labels = aux_dataloader.get_batch()
         classifier_logits = netC(Variable(aux_images))
         augmented_logits = F.pad(classifier_logits, (0,1))
-        is_positive = Variable(aux_labels.max(dim=1)[0])
-        is_openset = 1 - is_positive
-        log_soft_open = F.log_softmax(augmented_logits)[:, -1] * is_openset
-        errOpenSet = -log_soft_open.sum() / is_openset.sum()
+        log_soft_open = F.log_softmax(augmented_logits)[:, -1]
+        errOpenSet = -log_soft_open.mean()
         errOpenSet.backward()
         log.collect('Open Set Loss', errOpenSet)
 
