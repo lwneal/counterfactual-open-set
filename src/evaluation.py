@@ -1,15 +1,13 @@
 import json
-import sys
 import os
-import numpy as np
-import time
+
 import torch
-from pprint import pprint
+import numpy as np
 from torch.autograd import Variable
-from torch.nn.functional import nll_loss
-from torch.nn.functional import softmax, sigmoid
-import imutil
-from sklearn.metrics import roc_curve, auc
+import torch.nn.functional as F
+from sklearn.metrics import roc_curve, roc_auc_score
+
+from plotting import plot_xy
 
 
 # Returns 1 for items that are known, 0 for unknown
@@ -23,11 +21,7 @@ def predict_openset(networks, images, threshold=0.):
 def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **options):
     for net in networks.values():
         net.eval()
-    netG = networks['generator']
     netC = networks['classifier']
-    result_dir = options['result_dir']
-    image_size = options['image_size']
-    latent_size = options['latent_size']
     fold = options.get('fold', 'evaluation')
 
     classification_closed_correct = 0
@@ -37,7 +31,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
         images = Variable(images, volatile=True)
         # Predict a classification among known classes
         net_y = netC(images)
-        class_predictions = softmax(net_y, dim=1)
+        class_predictions = F.softmax(net_y, dim=1)
         
         # Also predict whether each example belongs to any class at all
         is_known = predict_openset(networks, images)
@@ -75,26 +69,6 @@ def pca(vectors):
     return pca.transform(vectors)
 
 
-# Plots a list of 2d points
-def plot(dots, output_filename, title=None, labels=None):
-    # Incantation to enable headless mode
-    import matplotlib
-    matplotlib.use('Agg')
-    # Apply sane Seaborn defaults to Matplotlib
-    import seaborn as sns
-    sns.set_style('darkgrid')
-    import matplotlib.pyplot as plt
-
-    import pandas as pd
-    df = pd.DataFrame(dots)
-    df.columns = ['Z_1', 'Z_2']
-    df['label'] = labels
-    plot = sns.pairplot(df, size=4, hue='label', plot_kws={'s':12})
-    if title:
-        plot.fig.suptitle(title)
-    plot.savefig(output_filename)
-
-
 # Open Set Classification
 # Given two datasets, one on-manifold and another off-manifold, predict
 # whether each item is on-manifold or off-manifold using the discriminator
@@ -105,9 +79,6 @@ def plot(dots, output_filename, title=None, labels=None):
 def evaluate_openset(networks, dataloader_on, dataloader_off, **options):
     for net in networks.values():
         net.eval()
-    result_dir = options['result_dir']
-    image_size = options['image_size']
-    latent_size = options['latent_size']
 
     d_scores_on = get_openset_scores(dataloader_on, networks)
     d_scores_off = get_openset_scores(dataloader_off, networks)
@@ -164,10 +135,8 @@ def get_openset_scores(dataloader, networks):
 
 
 def plot_roc(y_true, y_score, title="Receiver Operating Characteristic"):
-    from sklearn.metrics import roc_curve, roc_auc_score
     fpr, tpr, thresholds = roc_curve(y_true, y_score)
     auc_score = roc_auc_score(y_true, y_score)
-    from plotting import plot_xy
     plot = plot_xy(fpr, tpr, x_axis="False Positive Rate", y_axis="True Positive Rate", title=title)
     return auc_score, plot
 

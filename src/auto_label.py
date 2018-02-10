@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import sys
+import numpy as np
 
 # Print --help message before importing the rest of the project
 parser = argparse.ArgumentParser()
@@ -13,14 +14,8 @@ options = vars(parser.parse_args())
 
 # Import the rest of the project
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from dataloader import CustomDataloader
-from pprint import pprint
-import json
-import numpy as np
-
 
 label = 1
-
 
 def ls(dirname, ext=None):
     files = os.listdir(dirname)

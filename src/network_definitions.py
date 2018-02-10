@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from torch.nn.functional import log_softmax
 from vector import clamp_to_unit_sphere
 
 

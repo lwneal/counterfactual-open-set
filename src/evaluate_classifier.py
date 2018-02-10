@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import json
 import os
 import sys
 from pprint import pprint
@@ -18,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from dataloader import CustomDataloader
 from networks import build_networks
 from options import load_options, get_current_epoch
-from evaluation import evaluate_classifier, evaluate_openset, save_evaluation
+from evaluation import save_evaluation
 from comparison import evaluate_with_comparison
 
 options = load_options(options)

@@ -1,16 +1,12 @@
 import os
-import random
 import time
 import torch
 import numpy as np
 from torch import autograd
 from torch.autograd import Variable
 from torch.nn import functional as F
-from torch.nn.functional import softmax, sigmoid, log_softmax
-from torch.nn.functional import nll_loss, cross_entropy
-from vector import gen_noise, clamp_to_unit_sphere
+from vector import clamp_to_unit_sphere
 import imutil
-from imutil import VideoMaker
 from series import TimeSeries
 
 
@@ -70,8 +66,6 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     netG = networks['generator']
     netC = networks['classifier']
     netE = networks['encoder']
-    result_dir = options['result_dir']
-    latent_size = options['latent_size']
     speed = options['cf_speed']
     max_iters = options['cf_max_iters']
     distance_weight = options['cf_distance_weight']
@@ -93,7 +87,7 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
         logits = netC(netG(z, gan_scale))
         augmented_logits = F.pad(logits, pad=(0,1))
 
-        cf_loss = nll_loss(log_softmax(augmented_logits, dim=1), target_label)
+        cf_loss = F.nll_loss(F.log_softmax(augmented_logits, dim=1), target_label)
 
         distance_loss = torch.sum(
                 (

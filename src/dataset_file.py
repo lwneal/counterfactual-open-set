@@ -15,9 +15,7 @@ import random
 import os
 import json
 import numpy as np
-import imutil
 import copy
-import random
 
 DEFAULT_FOLD = 'train'
 
