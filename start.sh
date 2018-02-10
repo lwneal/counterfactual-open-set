@@ -24,6 +24,8 @@ GAN_EPOCHS=30
 CLASSIFIER_EPOCHS=30
 CF_COUNT=200
 
+export IMUTIL_SHOW=""
+
 # Train the intial generative model (E+G+D+C)
 python src/train_gan.py --epochs $GAN_EPOCHS 2>&1 | tee -a stdout.txt
 
