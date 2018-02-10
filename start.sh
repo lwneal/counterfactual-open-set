@@ -33,21 +33,21 @@ CF_COUNT=100
 
 
 # Train the intial generative model (E+G+D+C)
-python src/train_gan.py --epochs $GAN_EPOCHS 2>&1 | tee -a stdout.txt
+python src/train_gan.py --epochs $GAN_EPOCHS 2>&1 >> stdout.txt
 
 # Generate a number of counterfactuals, in K+2 by K+2 square grids
-python src/generate_counterfactual.py --result_dir . --count $CF_COUNT 2>&1 | tee -a stdout.txt
+python src/generate_counterfactual.py --result_dir . --count $CF_COUNT 2>&1 >> stdout.txt
 
 
 # Automatically label the rightmost column in each grid (ignore the others)
 # TODO: Something more elegant than this?
-python src/auto_label.py --output_filename generated_images.dataset 2>&1 | tee -a stdout.txt
+python src/auto_label.py --output_filename generated_images.dataset 2>&1 >> stdout.txt
 
 
 # Train a new classifier, now using the aux_dataset containing the counterfactuals
-python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee -a stdout.txt
+python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 >> stdout.txt
 
 
 # Evaluate it one more time just for good measure
-python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 | tee -a stdout.txt
+python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 >> stdout.txt
 
