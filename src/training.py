@@ -10,6 +10,8 @@ from vector import make_noise
 from dataloader import FlexibleCustomDataloader
 from series import TimeSeries
 
+from gradient_penalty import calc_gradient_penalty
+
 
 def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     for net in networks.values():
@@ -39,6 +41,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         ###########################
         netD.zero_grad()
 
+        """
         # Classify sampled images as fake
         noise = make_noise(batch_size, latent_size, sample_scale)
         fake_images = netG(noise, sample_scale)
@@ -46,22 +49,28 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         loss_fake_sampled = F.softplus(logits).mean()
         log.collect('Discriminator Sampled', loss_fake_sampled)
         loss_fake_sampled.backward()
+        """
 
-        if False:
-            # Classify autoencoded images as fake
-            more_images, more_labels = dataloader.get_batch()
-            more_images = Variable(more_images)
-            fake_images = netG(netE(more_images, ac_scale), ac_scale)
-            logits_fake = netD(fake_images)[:,0]
-            loss_fake_ac = F.softplus(logits_fake) * options['discriminator_weight']
-            log.collect('Discriminator Autoencoded', loss_fake_ac)
-            loss_fake_ac.backward()
+        # Classify autoencoded images as fake
+        more_images, more_labels = dataloader.get_batch()
+        more_images = Variable(more_images)
+        fake_images = netG(netE(more_images, ac_scale), ac_scale)
+        logits_fake = netD(fake_images)[:,0]
+        #loss_fake_ac = F.softplus(logits_fake).mean() * options['discriminator_weight']
+        loss_fake_ac = logits_fake.mean() * options['discriminator_weight']
+        log.collect('Discriminator Autoencoded', loss_fake_ac)
+        loss_fake_ac.backward()
 
         # Classify real examples as real
         logits = netD(images)[:,0]
-        loss_real = F.softplus(-logits).mean() * options['discriminator_weight']
+        #loss_real = F.softplus(-logits).mean() * options['discriminator_weight']
+        loss_real = -logits.mean() * options['discriminator_weight']
         loss_real.backward()
         log.collect('Discriminator Real', loss_real)
+
+        gp = calc_gradient_penalty(netD, images.data, fake_images.data)
+        gp.backward()
+        log.collect('Gradient Penalty', gp)
 
         optimizerD.step()
         ############################
@@ -84,7 +93,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         # Minimize fakeness of autoencoded images
         fake_images = netG(netE(images, ac_scale), ac_scale)
         logits = netD(fake_images)[:,0]
-        errG = F.softplus(-logits).mean() * options['generator_weight']
+        #errG = F.softplus(-logits).mean() * options['generator_weight']
+        errG = -logits.mean() * options['generator_weight']
         errG.backward()
         log.collect('Generator Autoencoded', errG)
 
