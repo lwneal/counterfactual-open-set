@@ -58,12 +58,14 @@ class TimeSeries:
         duration = time.time() - self.start_time
         lines.append("Collected {:.3f} sec ending {}".format(
             duration, whattimeisit()))
-        lines.append("Max Rate {:.2f}/sec".format(self.get_rate()))
+        maxlen = max(len(c) for c in self.series.values())
+        lines.append("Collected {:8d} points ({:.2f}/sec)".format(
+            maxlen, maxlen / duration))
         lines.append("{:>32}{:>12}{:>14}".format('Name', 'Avg.', 'Last 10'))
         for name in sorted(self.series):
             values = np.array(self.series[name])
             name = shorten(name)
-            lines.append("{:>32}:      {:.4f}      {:.4f} {}".format(
+            lines.append("{:>32}:      {:8.4f}      {:8.4f} {}".format(
                 name, values.mean(), values[-10:].mean(), sparkline(values)))
         if self.predictions:
             lines.append('Predictions:')
@@ -77,9 +79,6 @@ class TimeSeries:
         # Cache the most recent printed text to a file
         open('.last_summary.log', 'w').write(text)
         return text
-
-    def get_rate(self):
-        return max([len(c) for c in self.series]) / (time.time() - self.start_time)
 
     def write_to_file(self):
         filename = 'timeseries.{}.npy'.format(int(time.time()))
