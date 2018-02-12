@@ -7,6 +7,8 @@ def evaluate_with_comparison(networks, dataloader, **options):
     comparison_dataloader = get_comparison_dataloader(**options)
     if comparison_dataloader:
         options['fold'] = 'openset_{}'.format(comparison_dataloader.dsf.name)
+    if options.get('mode'):
+        options['fold'] += '_{}'.format(options['mode'])
 
     new_results = evaluation.evaluate_classifier(networks, dataloader, comparison_dataloader, **options)
 
