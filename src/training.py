@@ -34,7 +34,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         images = Variable(images)
         labels = Variable(class_labels)
 
-        ac_scale = random.choice([1, 2, 4, 8])
+        #ac_scale = random.choice([1, 2, 4, 8])
+        ac_scale = 1
         sample_scale = 1
         ############################
         # Discriminator Updates
