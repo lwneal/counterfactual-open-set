@@ -102,6 +102,19 @@ def download_mnist(latest_md5):
             if int(example['label']) >= 6:
                 fp.write(json.dumps(example) + '\n')
 
+    # For MORE open set classification experiments
+    for class_idx in range(10):
+        fp_set = open('mnist-{}.dataset'.format(class_idx), 'w')
+        fp_openset = open('mnist-not{}.dataset'.format(class_idx), 'w')
+        for example in train + test + val:
+            if int(example['label']) == class_idx:
+                fp_set.write(json.dumps(example) + '\n')
+            else:
+                fp_openset.write(json.dumps(example) + '\n')
+        fp_set.close()
+        fp_openset.close()
+
+
 
 if __name__ == '__main__':
     os.chdir(DATA_DIR)

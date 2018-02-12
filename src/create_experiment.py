@@ -29,6 +29,7 @@ parser.add_argument('--cf_max_iters', type=int, default=100, help='Maximum numbe
 parser.add_argument('--cf_distance_weight', type=float, default=1000, help='Weight for latent distance loss [default: 1]')
 parser.add_argument('--cf_gan_scale', type=int, default=4, help='Scale, for multiscale GAN')
 
+parser.add_argument('--comparison_dataset', help='Optional comparison dataset for open set evaluation [default: None]')
 
 options = vars(parser.parse_args())
 

@@ -17,7 +17,7 @@ fi
 if [ ! -f /mnt/data/cifar10.dataset ]; then
     python src/datasets/download_cifar10.py
 fi
-if [ ! -f /mnt/data/mnist.dataset ]; then
+if [ ! -f /mnt/data/mnist-not5.dataset ]; then
     python src/datasets/download_mnist.py
 fi
 if [ ! -f /mnt/data/oxford102.dataset ]; then
@@ -36,7 +36,7 @@ CF_COUNT=100
 python src/train_gan.py --epochs $GAN_EPOCHS 2>&1 >> stdout.txt
 
 # Baseline: Evaluate the regular classifier
-python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset --mode baseline 2>&1 >> stdout.txt
+python src/evaluate_classifier.py --result_dir . --mode baseline 2>&1 >> stdout.txt
 
 # Generate a number of counterfactuals, in K+2 by K+2 square grids
 python src/generate_counterfactual.py --result_dir . --count $CF_COUNT 2>&1 >> stdout.txt
@@ -47,7 +47,7 @@ python src/auto_label.py --output_filename generated_images.dataset 2>&1 >> stdo
 
 
 # Train a new classifier, now using the aux_dataset containing the counterfactuals
-python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset --comparison_dataset /mnt/data/svhn-59.dataset 2>&1 >> stdout.txt
+python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset 2>&1 >> stdout.txt
 
 
 # Evaluate it one more time just for good measure

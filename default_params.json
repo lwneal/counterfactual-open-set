@@ -1,6 +1,7 @@
 {
   "batch_size": 64,
   "dataset": "/mnt/data/svhn-04.dataset",
+  "comparison_dataset": "/mnt/data/svhn-59.dataset",
   "delete_background": false,
   "hypothesis": "A simple test dataset",
   "image_size": 32,
