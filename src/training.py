@@ -68,27 +68,30 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         loss_real.backward()
         log.collect('Discriminator Real', loss_real)
 
+        """
         gp = calc_gradient_penalty(netD, images.data, fake_images.data)
         gp.backward()
         log.collect('Gradient Penalty', gp)
+        """
 
         optimizerD.step()
+
         ############################
 
         ############################
         # Generator Update
         ###########################
         netG.zero_grad()
-        netE.zero_grad()
 
-        if False:
-            # Minimize fakeness of sampled images
-            noise = make_noise(batch_size, latent_size, sample_scale)
-            fake_images_sampled = netG(noise, sample_scale)
-            logits = netD(fake_images_sampled)[:,0]
-            errSampled = F.softplus(-logits).mean() * options['generator_weight']
-            errSampled.backward()
-            log.collect('Generator Sampled', errSampled)
+        """
+        # Minimize fakeness of sampled images
+        noise = make_noise(batch_size, latent_size, sample_scale)
+        fake_images_sampled = netG(noise, sample_scale)
+        logits = netD(fake_images_sampled)[:,0]
+        errSampled = F.softplus(-logits).mean() * options['generator_weight']
+        errSampled.backward()
+        log.collect('Generator Sampled', errSampled)
+        """
 
         # Minimize fakeness of autoencoded images
         fake_images = netG(netE(images, ac_scale), ac_scale)
@@ -98,17 +101,22 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         errG.backward()
         log.collect('Generator Autoencoded', errG)
 
+        optimizerG.step()
+
         ############################
-        # Encoder Update
+        # Autoencoder Update
         ###########################
+        netG.zero_grad()
+        netE.zero_grad()
+
         # Minimize reconstruction loss
         reconstructed = netG(netE(images, ac_scale), ac_scale)
         err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
         log.collect('Pixel Reconstruction Loss', err_reconstruction)
 
-        optimizerG.step()
         optimizerE.step()
+        optimizerG.step()
         ###########################
 
         ############################

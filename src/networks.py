@@ -55,6 +55,8 @@ def get_optimizers(networks, lr=.0001, beta1=.5, beta2=.999, weight_decay=.0, **
     optimizers = {}
     for name in networks:
         net = networks[name]
+        if name == 'discriminator':
+            weight_decay = 1.0
         optimizers[name] = optim.Adam(net.parameters(), lr=lr, betas=(beta1, beta2), weight_decay=weight_decay)
     return optimizers
 
