@@ -64,7 +64,7 @@ def generate_counterfactual(networks, dataloader, **options):
 
 def generate_counterfactual_column(networks, start_images, target_class, **options):
     netG = networks['generator']
-    netC = networks['classifier']
+    netC = networks['classifier_k']
     netE = networks['encoder']
     speed = options['cf_speed']
     max_iters = options['cf_max_iters']

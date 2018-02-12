@@ -11,8 +11,7 @@ from plotting import plot_xy
 
 
 # Returns 1 for items that are known, 0 for unknown
-def predict_openset(networks, images, threshold=0.):
-    netC = networks['classifier']
+def predict_openset(netC, images, threshold=0.):
     preds = netC(images)
     maxval, _ = preds.max(dim=1) 
     return maxval > threshold
@@ -21,7 +20,12 @@ def predict_openset(networks, images, threshold=0.):
 def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **options):
     for net in networks.values():
         net.eval()
-    netC = networks['classifier']
+    if options.get('mode') == 'baseline':
+        print("Using the K-class classifier")
+        netC = networks['classifier_k']
+    else:
+        print("Using the K+1 open set classifier")
+        netC = networks['classifier_kplusone']
     fold = options.get('fold', 'evaluation')
 
     classification_closed_correct = 0
@@ -34,7 +38,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
         class_predictions = F.softmax(net_y, dim=1)
         
         # Also predict whether each example belongs to any class at all
-        is_known = predict_openset(networks, images)
+        is_known = predict_openset(netC, images)
 
         _, predicted = class_predictions.max(1)
         classification_closed_correct += sum(predicted.data == labels)
@@ -47,7 +51,7 @@ def evaluate_classifier(networks, dataloader, open_set_dataloader=None, **option
         for images, labels in open_set_dataloader:
             images = Variable(images, volatile=True)
             # Predict whether each example is known/unknown
-            is_known = predict_openset(networks, images)
+            is_known = predict_openset(netC, images)
             openset_correct += sum(is_known.data == 0)
             openset_total += len(labels)
 
@@ -80,8 +84,8 @@ def evaluate_openset(networks, dataloader_on, dataloader_off, **options):
     for net in networks.values():
         net.eval()
 
-    d_scores_on = get_openset_scores(dataloader_on, networks)
-    d_scores_off = get_openset_scores(dataloader_off, networks)
+    d_scores_on = get_openset_scores(dataloader_on, networks, **options)
+    d_scores_off = get_openset_scores(dataloader_off, networks, **options)
 
     y_true = np.array([0] * len(d_scores_on) + [1] * len(d_scores_off))
     y_discriminator = np.concatenate([d_scores_on, d_scores_off])
@@ -116,8 +120,13 @@ def save_plot(plot, title, **options):
     plot.figure.savefig(filename)
     
 
-def get_openset_scores(dataloader, networks):
-    netC = networks['classifier']
+def get_openset_scores(dataloader, networks, **options):
+    if options.get('mode') == 'baseline':
+        print("Using the K-class classifier")
+        netC = networks['classifier_k']
+    else:
+        print("Using the K+1 open set classifier")
+        netC = networks['classifier_kplusone']
 
     # The implicit K+1th class (the open set class) is computed
     #  by assuming an extra linear output with constant value 0

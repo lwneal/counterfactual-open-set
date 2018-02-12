@@ -35,9 +35,11 @@ CF_COUNT=100
 # Train the intial generative model (E+G+D+C)
 python src/train_gan.py --epochs $GAN_EPOCHS 2>&1 >> stdout.txt
 
+# Baseline: Evaluate the regular classifier
+python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset --mode baseline 2>&1 >> stdout.txt
+
 # Generate a number of counterfactuals, in K+2 by K+2 square grids
 python src/generate_counterfactual.py --result_dir . --count $CF_COUNT 2>&1 >> stdout.txt
-
 
 # Automatically label the rightmost column in each grid (ignore the others)
 # TODO: Something more elegant than this?

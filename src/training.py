@@ -19,11 +19,11 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     netE = networks['encoder']
     netD = networks['discriminator']
     netG = networks['generator']
-    netC = networks['classifier']
+    netC = networks['classifier_k']
     optimizerE = optimizers['encoder']
     optimizerD = optimizers['discriminator']
     optimizerG = optimizers['generator']
-    optimizerC = optimizers['classifier']
+    optimizerC = optimizers['classifier_k']
     result_dir = options['result_dir']
     batch_size = options['batch_size']
     latent_size = options['latent_size']
@@ -172,8 +172,8 @@ def demo(networks, images, fixed_noise, ac_scale, sample_scale, result_dir, epoc
 def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
     for net in networks.values():
         net.train()
-    netC = networks['classifier']
-    optimizerC = optimizers['classifier']
+    netC = networks['classifier_kplusone']
+    optimizerC = optimizers['classifier_kplusone']
     batch_size = options['batch_size']
     image_size = options['image_size']
 

@@ -9,6 +9,7 @@ parser.add_argument('--result_dir', help='Output directory for images and model 
 parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train for [default: 10]')
 parser.add_argument('--aux_dataset', help='Path to aux_dataset file [default: None]')
 parser.add_argument('--comparison_dataset', help='Optional comparison dataset for open set evaluation [default: None]')
+parser.add_argument('--mode', default='', help='If set to "baseline" use the baseline classifier')
 
 options = vars(parser.parse_args())
 
