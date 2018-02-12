@@ -27,7 +27,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-GAN_EPOCHS=20
+GAN_EPOCHS=10
 CLASSIFIER_EPOCHS=10
 CF_COUNT=100
 
