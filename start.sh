@@ -29,7 +29,7 @@ fi
 
 GAN_EPOCHS=10
 CLASSIFIER_EPOCHS=10
-CF_COUNT=100
+CF_COUNT=10
 
 
 # Train the intial generative model (E+G+D+C)
