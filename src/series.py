@@ -6,11 +6,15 @@ import time
 import whattimeisit
 from tqdm import tqdm
 
+def resample(x, desired_length):
+    width = int(np.ceil(len(x) / desired_length))
+    padding = (0, width - x.size % width)
+    padded = np.pad(x, padding, mode='constant', constant_values=np.NaN)
+    return np.nanmean(padded.reshape(-1, width), axis=1)
 
 def sparkline(data, length=16):
     BARS = u'▁▂▃▅▆▇'
-    step = len(data) / length
-    samples = [data[int(i)] for i in np.arange(0, len(data), step)]
+    samples = resample(data, length)
     incr = min(samples)
     width = (max(samples) - min(samples)) / (len(BARS) - 1)
     bins = [i*width+incr for i in range(len(BARS))]
