@@ -28,7 +28,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     batch_size = options['batch_size']
     latent_size = options['latent_size']
 
-    log = TimeSeries('Training GAN')
+    log = TimeSeries('Training GAN', len(dataloader))
 
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)
@@ -138,7 +138,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
 
         log.print_every()
 
-        if i % 100 == 0:
+        if i % 100 == 1:
             fixed_noise = make_noise(batch_size, latent_size, sample_scale, fixed_seed=42)
             demo(networks, images, fixed_noise, ac_scale, sample_scale, result_dir, epoch, i)
     return True

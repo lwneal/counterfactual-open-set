@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import time
 import whattimeisit
+from tqdm import tqdm
 
 
 def sparkline(data, length=16):
@@ -23,12 +24,13 @@ class TimeSeries:
     def __str__(self):
         return self.format_all()
 
-    def __init__(self, title=None):
+    def __init__(self, title=None, epoch_length=None):
         self.series = {}
         self.predictions = {}
         self.start_time = time.time()
         self.last_printed_at = time.time()
         self.title = title
+        self.epoch_length = epoch_length
 
     def collect(self, name, value):
         if not self.series:
@@ -59,8 +61,10 @@ class TimeSeries:
         lines.append("Collected {:.3f} sec ending {}".format(
             duration, whattimeisit()))
         maxlen = max(len(c) for c in self.series.values())
-        lines.append("Collected {:8d} points ({:.2f}/sec)".format(
-            maxlen, maxlen / duration))
+        if self.epoch_length:
+            lines.append(tqdm.format_meter(maxlen, self.epoch_length, duration, ncols=80))
+        else:
+            lines.append("Collected {:8d} points ({:.2f}/sec)".format(maxlen, maxlen / duration))
         lines.append("{:>32}{:>12}{:>14}".format('Name', 'Avg.', 'Last 10'))
         for name in sorted(self.series):
             values = np.array(self.series[name])
