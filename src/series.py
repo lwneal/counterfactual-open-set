@@ -69,7 +69,7 @@ class TimeSeries:
             lines.append(tqdm.format_meter(maxlen, self.epoch_length, duration, ncols=80))
         else:
             lines.append("Collected {:8d} points ({:.2f}/sec)".format(maxlen, maxlen / duration))
-        lines.append("{:>32}{:>12}{:>14}".format('Name', 'Avg.', 'Last 10'))
+        lines.append("{:>32}{:>14}{:>16}".format('Name', 'Avg.', 'Last 10'))
         for name in sorted(self.series):
             values = np.array(self.series[name])
             name = shorten(name)
