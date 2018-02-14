@@ -27,7 +27,8 @@ def generate_counterfactual(networks, dataloader, **options):
     """
     result_dir = options['result_dir']
 
-    K = dataloader.num_classes
+    # NOTE: Too many classes in datasets like cub200
+    K = min(dataloader.num_classes, 10)
     # Make the batch size large enough to form a square grid
     cf_count = K + 2
 
