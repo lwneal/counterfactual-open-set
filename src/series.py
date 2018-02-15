@@ -15,7 +15,12 @@ def resample(x, desired_length):
 
 def sparkline(data, length=16):
     BARS = u'▁▂▃▅▆▇'
-    samples = resample(data, length)
+    if len(data) > length:
+        truncate = (len(data) // length) * length
+        samples = resample(data[:truncate], length)
+    else:
+        step = len(data) / length
+        samples = [data[int(step * i / length)] for i in range(length)]
     incr = min(samples)
     width = (max(samples) - min(samples)) / (len(BARS) - 1)
     bins = [i*width+incr for i in range(len(BARS))]
