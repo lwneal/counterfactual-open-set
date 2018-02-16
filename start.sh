@@ -38,15 +38,16 @@ python src/train_gan.py --epochs $GAN_EPOCHS
 # Baseline: Evaluate the regular classifier (C_k+1)
 python src/evaluate_classifier.py --result_dir . --mode baseline
 
-# Generate a number of counterfactuals, in K+2 by K+2 square grids
-python src/generate_counterfactual.py --result_dir . --count $CF_COUNT
+for i in `seq 10`; do
+    # Generate a number of counterfactuals, in K+2 by K+2 square grids
+    python src/generate_counterfactual.py --result_dir . --count $CF_COUNT
 
-# Automatically label the rightmost column in each grid (ignore the others)
-python src/auto_label.py --output_filename generated_images.dataset
+    # Automatically label the rightmost column in each grid (ignore the others)
+    python src/auto_label.py --output_filename generated_images.dataset
 
-# Train a new classifier, now using the aux_dataset containing the counterfactuals
-python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset
+    # Train a new classifier, now using the aux_dataset containing the counterfactuals
+    python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset
 
-# Evaluate it one more time just for good measure
-python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset
-
+    # Evaluate it one more time just for good measure
+    python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset --aux_dataset generated_images.dataset
+done

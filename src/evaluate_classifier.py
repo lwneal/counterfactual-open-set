@@ -10,6 +10,7 @@ parser.add_argument('--result_dir', required=True, help='Output directory for im
 parser.add_argument('--fold', default="test", help='Name of evaluation fold [default: test]')
 parser.add_argument('--epoch', type=int, help='Epoch to evaluate (latest epoch if none chosen)')
 parser.add_argument('--comparison_dataset', type=str, help='Dataset for off-manifold comparison')
+parser.add_argument('--aux_dataset', type=str, help='aux_dataset used in train_classifier')
 parser.add_argument('--mode', default='', help='If set to "baseline" use the baseline classifier')
 options = vars(parser.parse_args())
 
