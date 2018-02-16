@@ -57,7 +57,14 @@ def main():
     print("Saving .dataset file...")
     output_filename = '{}/{}.dataset'.format(DATA_DIR, DATASET_NAME)
     save_image_dataset(examples, output_filename)
-    print("Dataset convertion finished")
+
+    animals = [e for e in examples if e['is_animal']]
+    animal_filename = '{}/{}-animals.dataset'.format(DATA_DIR, DATASET_NAME)
+    save_image_dataset(animals, animal_filename)
+
+    machines = [e for e in examples if not e['is_animal']]
+    machine_filename = '{}/{}-machines.dataset'.format(DATA_DIR, DATASET_NAME)
+    save_image_dataset(machines, machine_filename)
 
     print("Finished writing datasets")
 
