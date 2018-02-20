@@ -151,7 +151,9 @@ def plot_roc(y_true, y_score, title="Receiver Operating Characteristic"):
 
 
 def save_evaluation(new_results, result_dir, epoch):
-    filename = 'eval_epoch_{:04d}.json'.format(epoch)
+    if not os.path.exists('evaluations'):
+        os.mkdir('evaluations')
+    filename = 'evaluations/eval_epoch_{:04d}.json'.format(epoch)
     filename = os.path.join(result_dir, filename)
     filename = os.path.expanduser(filename)
     if os.path.exists(filename):
