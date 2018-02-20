@@ -11,7 +11,7 @@ def evaluate_with_comparison(networks, dataloader, **options):
         options['fold'] += '_{}'.format(options['mode'])
     if options.get('aux_dataset'):
         aux_dataset = CustomDataloader(options['aux_dataset'])
-        options['fold'] += '_{}'.format(aux_dataset.dsf.count())
+        options['fold'] = '{}_{}'.format(options.get('fold'), aux_dataset.dsf.count())
 
     new_results = evaluation.evaluate_classifier(networks, dataloader, comparison_dataloader, **options)
 
