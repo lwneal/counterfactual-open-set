@@ -8,3 +8,5 @@ tqdm
 sklearn
 matplotlib
 seaborn
+Cython
+libMR

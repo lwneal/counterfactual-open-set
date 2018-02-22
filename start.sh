@@ -8,7 +8,10 @@ export PYTHONUNBUFFERED=1
 # Do not show images in-terminal, even if imgcat is installed
 export IMUTIL_SHOW=""
 
-pip install -r requirements.txt
+# Install requirements in order, including dependencies
+while read p; do
+    pip install $p
+done < requirements.txt
 
 # TODO: do this in python, based on --dataset
 if [ ! -f /mnt/data/svhn-04.dataset ]; then
