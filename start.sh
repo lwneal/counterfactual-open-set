@@ -27,7 +27,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-GAN_EPOCHS=100
+GAN_EPOCHS=10
 CLASSIFIER_EPOCHS=10
 CF_COUNT=10
 
@@ -38,7 +38,8 @@ python src/train_gan.py --epochs $GAN_EPOCHS
 # Baseline: Evaluate the regular classifier (C_k+1)
 python src/evaluate_classifier.py --result_dir . --mode baseline
 
-for i in `seq 10`; do
+# For 100, 200, ... generated examples:
+for i in `seq 5`; do
     # Generate a number of counterfactuals, in K+2 by K+2 square grids
     python src/generate_counterfactual.py --result_dir . --count $CF_COUNT
 
@@ -49,5 +50,5 @@ for i in `seq 10`; do
     python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset
 
     # Evaluate it one more time just for good measure
-    python src/evaluate_classifier.py --result_dir . --comparison_dataset /mnt/data/svhn-59.dataset --aux_dataset generated_images.dataset
+    python src/evaluate_classifier.py --result_dir . --aux_dataset generated_images.dataset
 done
