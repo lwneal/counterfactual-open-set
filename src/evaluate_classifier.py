@@ -11,7 +11,7 @@ parser.add_argument('--fold', default="test", help='Name of evaluation fold [def
 parser.add_argument('--epoch', type=int, help='Epoch to evaluate (latest epoch if none chosen)')
 parser.add_argument('--comparison_dataset', type=str, help='Dataset for off-manifold comparison')
 parser.add_argument('--aux_dataset', type=str, help='aux_dataset used in train_classifier')
-parser.add_argument('--mode', default='', help='If set to "baseline" use the baseline classifier')
+parser.add_argument('--mode', default='', help='One of: default, weibull, baseline')
 options = vars(parser.parse_args())
 
 # Import the rest of the project
@@ -30,9 +30,14 @@ options['random_horizontal_flip'] = False
 
 dataloader = CustomDataloader(last_batch=True, shuffle=False, **options)
 
+# TODO: structure options in a way that doesn't require this sort of hack
+train_dataloader_options = options.copy()
+train_dataloader_options['fold'] = 'train'
+dataloader_train = CustomDataloader(last_batch=True, shuffle=False, **train_dataloader_options)
+
 networks = build_networks(dataloader.num_classes, **options)
 
-new_results = evaluate_with_comparison(networks, dataloader, **options)
+new_results = evaluate_with_comparison(networks, dataloader, dataloader_train=dataloader_train, **options)
 
 pprint(new_results)
 save_evaluation(new_results, options['result_dir'], options['epoch'])

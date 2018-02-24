@@ -1,6 +1,7 @@
 import json
 import os
 
+import libmr
 import torch
 import numpy as np
 from torch.autograd import Variable
@@ -9,6 +10,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 
 from plotting import plot_xy
 
+WEIBULL_TAIL_SIZE = 20
 
 # Returns 1 for items that are known, 0 for unknown
 def predict_openset(netC, images, threshold=0.):
@@ -120,27 +122,80 @@ def save_plot(plot, title, **options):
     plot.figure.savefig(filename)
     
 
-def get_openset_scores(dataloader, networks, **options):
-    if options.get('mode') == 'baseline':
-        print("Using the K-class classifier")
-        netC = networks['classifier_k']
+def get_openset_scores(dataloader, networks, dataloader_train=None, **options):
+    if options.get('mode') == 'weibull':
+        openset_scores = openset_weibull(dataloader, dataloader_train, networks['classifier_k'])
+    elif options.get('mode') == 'baseline':
+        openset_scores = openset_kplusone(dataloader, networks['classifier_k'])
     else:
-        print("Using the K+1 open set classifier")
-        netC = networks['classifier_kplusone']
+        openset_scores = openset_kplusone(dataloader, networks['classifier_kplusone'])
+    return openset_scores
 
-    # The implicit K+1th class (the open set class) is computed
-    #  by assuming an extra linear output with constant value 0
-    discriminator_scores = []
+
+def openset_weibull(dataloader_test, dataloader_train, netC):
+    # First generate pre-softmax outputs for all training data
+    print("Weibull computing features for all correctly-classified training data")
+    features = {}
+    for images, labels in dataloader_train:
+        logits = netC(images)
+        correctly_labeled = (logits.data.max(1)[1] == labels)
+        labels_np = labels.cpu().numpy()
+        logits_np = logits.data.cpu().numpy()
+        for i, label in enumerate(labels_np):
+            if not correctly_labeled[i]:
+                continue
+            # If correctly labeled, add this to the list of features for this class
+            if label not in features:
+                features[label] = []
+            features[label].append(logits_np[i])
+    print("Computed features for {} known classes".format(len(features)))
+    for class_idx in features:
+        print("Class {}: {} images".format(class_idx, len(features[class_idx])))
+
+    print("Weibull computing logit means for all correctly-classified training examples")
+    feature_means = {}
+    for class_idx in features:
+        feature_means[class_idx] = np.array(features[class_idx]).mean(axis=0)
+
+    print("Weibull computing distances from class means")
+    print("Fitting Weibull parameters to tail of each class")
+    weibulls = {}
+    for class_idx in features:
+        class_mean = feature_means[class_idx]
+        distances = []
+        for v in features[class_idx]:
+            distances.append(np.linalg.norm(v - class_mean))
+        mr = libmr.MR()
+        mr.fit_high(distances, min(len(distances), WEIBULL_TAIL_SIZE))
+        weibulls[class_idx] = mr
+        print("Got weibull {}".format(mr.get_params()))
+
+    weibull_scores = []
+    for images, labels in dataloader_test:
+        logits = netC(images).data.cpu().numpy()
+        for i, image in enumerate(logits):
+            w_scores = []
+            for class_idx, class_mean in feature_means.items():
+                dist = np.linalg.norm(logits[i] - class_mean)
+                w_scores.append(weibulls[class_idx].w_score(dist))
+            weibull_scores.append(min(w_scores))
+        print("Weibull {}/{}...".format(len(weibull_scores), len(dataloader_test)))
+    return np.array(weibull_scores)
+    
+    
+
+def openset_kplusone(dataloader, netC):
+    openset_scores = []
     for i, (images, labels) in enumerate(dataloader):
         images = Variable(images, volatile=True)
         preds = netC(images)
+        # The implicit K+1th class (the open set class) is computed
+        #  by assuming an extra linear output with constant value 0
         z = torch.exp(preds).sum(dim=1)
         prob_known = z / (z + 1)
         prob_unknown = 1 - prob_known
-        discriminator_scores.extend(prob_unknown.data.cpu().numpy())
-
-    discriminator_scores = np.array(discriminator_scores)
-    return discriminator_scores
+        openset_scores.extend(prob_unknown.data.cpu().numpy())
+    return np.array(openset_scores)
 
 
 def plot_roc(y_true, y_score, title="Receiver Operating Characteristic"):
