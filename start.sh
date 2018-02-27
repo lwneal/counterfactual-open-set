@@ -2,6 +2,8 @@
 # Stop script if any command returns an error code
 set -e
 
+echo "Running job on `hostname` ip `hostname -I`"
+
 # Output stdout with no buffering, so it can be piped
 export PYTHONUNBUFFERED=1
 
