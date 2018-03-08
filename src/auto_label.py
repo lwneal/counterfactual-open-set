@@ -9,6 +9,7 @@ import numpy as np
 parser = argparse.ArgumentParser()
 #parser.add_argument('--columns', type=str, help='Columns to include (eg. 1,2,5)')
 #parser.add_argument('--label', type=str, help='Label to assign to each item')
+parser.add_argument('--result_dir', help='Result directory')
 parser.add_argument('--output_filename', required=True, help='Output .dataset filename')
 options = vars(parser.parse_args())
 
