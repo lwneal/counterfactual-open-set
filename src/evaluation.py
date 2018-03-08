@@ -102,7 +102,7 @@ def save_plot(plot, title, **options):
     
 
 def get_openset_scores(dataloader, networks, dataloader_train=None, **options):
-    if options.get('mode') == 'weibull':
+    if 'weibull' in options.get('mode'):
         openset_scores = openset_weibull(dataloader, dataloader_train, networks['classifier_k'])
     elif options.get('mode') == 'baseline':
         openset_scores = openset_kplusone(dataloader, networks['classifier_k'])
