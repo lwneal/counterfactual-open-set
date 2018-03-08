@@ -20,8 +20,6 @@ def build_networks(num_classes, epoch=None, latent_size=10, batch_size=64, **opt
 
     ClassifierClass = network_definitions.classifier32
     networks['classifier_k'] = ClassifierClass(num_classes=num_classes, latent_size=latent_size)
-
-    ClassifierClass = network_definitions.classifier32
     networks['classifier_kplusone'] = ClassifierClass(num_classes=num_classes, latent_size=latent_size)
 
     for net_name in networks:
@@ -69,7 +67,7 @@ def get_pth_by_epoch(result_dir, name, epoch=None):
     suffix = '.pth'
     if epoch is not None:
         suffix = 'epoch_{:04d}.pth'.format(epoch)
-    files = [f for f in files if f.startswith(name) and f.endswith(suffix)]
+    files = [f for f in files if f == '{}_{}'.format(name, suffix)]
     if not files:
         return None
     files = [os.path.join(checkpoint_path, fn) for fn in files]
