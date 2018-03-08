@@ -108,8 +108,25 @@ def get_openset_scores(dataloader, networks, dataloader_train=None, **options):
         openset_scores = openset_weibull(dataloader, dataloader_train, networks['classifier_kplusone'])
     elif options.get('mode') == 'baseline':
         openset_scores = openset_kplusone(dataloader, networks['classifier_k'])
+    elif options.get('mode') == 'autoencoder':
+        openset_scores = openset_autoencoder(dataloader, networks)
     else:
         openset_scores = openset_kplusone(dataloader, networks['classifier_kplusone'])
+    return openset_scores
+
+
+def openset_autoencoder(dataloader, networks, scale=4):
+    netE = networks['encoder']
+    netG = networks['generator']
+    netE.train()
+    netG.train()
+
+    openset_scores = []
+    for images, labels in dataloader:
+        images = Variable(images)
+        reconstructions = netG(netE(images, 4), 4)
+        mse = ((reconstructions - images) ** 2).sum(dim=-1).sum(dim=-1).sum(dim=-1)
+        openset_scores.extend([v for v in mse.data.cpu().numpy()])
     return openset_scores
 
 
