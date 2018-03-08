@@ -203,7 +203,7 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         errC.backward()
         log.collect('Classifier Loss', errC)
 
-        # Classify RED labeled aux_dataset as open set
+        # Classify aux_dataset examples as open set
         aux_images, aux_labels = aux_dataloader.get_batch()
         classifier_logits = netC(Variable(aux_images))
         augmented_logits = F.pad(classifier_logits, (0,1))

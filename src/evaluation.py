@@ -104,13 +104,14 @@ def save_plot(plot, title, **options):
 def get_openset_scores(dataloader, networks, dataloader_train=None, **options):
     if options.get('mode') == 'weibull':
         openset_scores = openset_weibull(dataloader, dataloader_train, networks['classifier_k'])
-    elif options.get('mode') == 'weibull-kplusone':
+    elif options.get('mode') and 'weibull' in options['mode']:
         openset_scores = openset_weibull(dataloader, dataloader_train, networks['classifier_kplusone'])
     elif options.get('mode') == 'baseline':
         openset_scores = openset_kplusone(dataloader, networks['classifier_k'])
     elif options.get('mode') == 'autoencoder':
         openset_scores = openset_autoencoder(dataloader, networks)
     else:
+        print('Using DEFAULT mode')
         openset_scores = openset_kplusone(dataloader, networks['classifier_kplusone'])
     return openset_scores
 
