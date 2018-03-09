@@ -191,7 +191,7 @@ def openset_weibull(dataloader_test, dataloader_train, netC):
 
     # TODO: Try using the alpha array hack from https://arxiv.org/pdf/1511.06233.pdf
 
-    modified_logits = (logits - logits.min()) * weibull_scores
+    modified_logits = (logits - np.expand_dims(logits.min(axis=1))) * weibull_scores
     softmax_scores = -np.log(np.sum(np.exp(logits), axis=1))
     openmax_scores = -np.log(np.sum(np.exp(modified_logits), axis=1))
     return np.array(openmax_scores)
