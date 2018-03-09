@@ -189,12 +189,22 @@ def openset_weibull(dataloader_test, dataloader_train, netC):
     weibull_scores = np.array(weibull_scores)
     logits = np.array(logits)
 
-    # TODO: Try using the alpha array hack from https://arxiv.org/pdf/1511.06233.pdf
+    # The following is as close as possible to the spirit of
+    #   https://arxiv.org/pdf/1511.06233.pdf
+    N, K = logits.shape
+    alpha = np.ones((N, K))
+    for i in range(N):
+        alpha[i][logits[i].argsort()] = np.arange(K) / (K - 1)
+    adjusted_scores = alpha * weibull_scores + (1 - alpha)
+    prob_open_set = (logits * (1 - weibull_scores)).sum(axis=1)
 
-    modified_logits = (logits - np.expand_dims(logits.min(axis=1))) * weibull_scores
-    softmax_scores = -np.log(np.sum(np.exp(logits), axis=1))
-    openmax_scores = -np.log(np.sum(np.exp(modified_logits), axis=1))
-    return np.array(openmax_scores)
+    # Logits must be positive (lower w score should mean lower probability)
+    #shifted_logits = (logits - np.expand_dims(logits.min(axis=1), -1))
+    #adjusted_scores = alpha * weibull_scores + (1 - alpha)
+    #openmax_scores = -np.log(np.sum(np.exp(shifted_logits * adjusted_scores), axis=1))
+    #return np.array(openmax_scores)
+
+    return prob_open_set
 
 
 def openset_kplusone(dataloader, netC):
