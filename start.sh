@@ -33,7 +33,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
 fi
 
 GAN_EPOCHS=30
-CLASSIFIER_EPOCHS=2
+CLASSIFIER_EPOCHS=3
 CF_COUNT=30
 GENERATOR_MODE=counterfactual
 #GENERATOR_MODE=ge_et_al
