@@ -33,8 +33,10 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
 fi
 
 GAN_EPOCHS=30
-CLASSIFIER_EPOCHS=1
+CLASSIFIER_EPOCHS=2
 CF_COUNT=30
+GENERATOR_MODE=counterfactual
+#GENERATOR_MODE=ge_et_al
 
 
 # Train the intial generative model (E+G+D+C_k)
@@ -47,15 +49,15 @@ python src/evaluate_classifier.py --result_dir . --mode weibull
 # For 100, 200, ... generated examples:
 for i in `seq 10`; do
     # Generate a number of counterfactuals, in K+2 by K+2 square grids
-    python src/generate_counterfactual.py --result_dir . --count $CF_COUNT
+    python src/generate_${MODE}.py --result_dir . --count $CF_COUNT
 
     # Automatically label the rightmost column in each grid (ignore the others)
-    python src/auto_label.py --output_filename generated_images.dataset
+    python src/auto_label_${MODE}.py --output_filename generated_images_${MODE}.dataset
 
     # Train a new classifier, now using the aux_dataset containing the counterfactuals
-    python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images.dataset
+    python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images_${MODE}.dataset
 
     # Evaluate it one more time just for good measure
-    python src/evaluate_classifier.py --result_dir . --aux_dataset generated_images.dataset
+    python src/evaluate_classifier.py --result_dir . --aux_dataset generated_images_${MODE}.dataset
 done
 python src/evaluate_classifier.py --result_dir . --mode weibull-kplusone
