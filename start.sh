@@ -33,7 +33,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
 fi
 
 GAN_EPOCHS=30
-CLASSIFIER_EPOCHS=5
+CLASSIFIER_EPOCHS=1
 CF_COUNT=30
 
 
@@ -45,7 +45,7 @@ python src/evaluate_classifier.py --result_dir . --mode baseline
 python src/evaluate_classifier.py --result_dir . --mode weibull
 
 # For 100, 200, ... generated examples:
-for i in `seq 5`; do
+for i in `seq 10`; do
     # Generate a number of counterfactuals, in K+2 by K+2 square grids
     python src/generate_counterfactual.py --result_dir . --count $CF_COUNT
 
