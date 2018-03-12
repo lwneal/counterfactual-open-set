@@ -42,6 +42,7 @@ python src/train_gan.py --epochs $GAN_EPOCHS
 
 # Baseline: Evaluate the regular classifier (C_k+1)
 python src/evaluate_classifier.py --result_dir . --mode baseline
+python src/evaluate_classifier.py --result_dir . --mode weibull
 
 # For 100, 200, ... generated examples:
 for i in `seq 5`; do
@@ -57,3 +58,4 @@ for i in `seq 5`; do
     # Evaluate it one more time just for good measure
     python src/evaluate_classifier.py --result_dir . --aux_dataset generated_images.dataset
 done
+python src/evaluate_classifier.py --result_dir . --mode weibull-kplusone
