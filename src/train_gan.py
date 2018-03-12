@@ -32,6 +32,7 @@ for epoch in range(start_epoch, start_epoch + options['epochs']):
     #generate_counterfactual(networks, dataloader, **options)
     eval_results = evaluate_with_comparison(networks, eval_dataloader, **options)
     pprint(eval_results)
-    if epoch % 10 == 0:
+    # Save every N epochs
+    if epoch % 4 == 0:
         save_networks(networks, epoch, options['result_dir'])
 save_networks(networks, epoch, options['result_dir'])
