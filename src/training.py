@@ -35,8 +35,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         labels = Variable(class_labels)
 
         #ac_scale = random.choice([1, 2, 4, 8])
-        ac_scale = 2
-        sample_scale = 2
+        ac_scale = 4
+        sample_scale = 4
         ############################
         # Discriminator Updates
         ###########################
@@ -50,6 +50,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         log.collect('Discriminator Sampled', loss_fake_sampled)
         loss_fake_sampled.backward()
 
+        """
         # Classify autoencoded images as fake
         more_images, more_labels = dataloader.get_batch()
         more_images = Variable(more_images)
@@ -59,11 +60,12 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         loss_fake_ac = logits_fake.mean() * options['discriminator_weight']
         log.collect('Discriminator Autoencoded', loss_fake_ac)
         loss_fake_ac.backward()
+        """
 
         # Classify real examples as real
         logits = netD(images)[:,0]
-        #loss_real = F.softplus(-logits).mean() * options['discriminator_weight']
-        loss_real = -logits.mean() * options['discriminator_weight']
+        loss_real = F.softplus(-logits).mean() * options['discriminator_weight']
+        #loss_real = -logits.mean() * options['discriminator_weight']
         loss_real.backward()
         log.collect('Discriminator Real', loss_real)
 
