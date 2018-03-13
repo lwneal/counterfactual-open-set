@@ -22,7 +22,7 @@ fi
 if [ ! -f /mnt/data/cifar10-split0a.dataset ]; then
     python src/datasets/download_cifar10.py
 fi
-if [ ! -f /mnt/data/mnist-04.dataset ]; then
+if [ ! -f /mnt/data/mnist-split0a.dataset ]; then
     python src/datasets/download_mnist.py
 fi
 if [ ! -f /mnt/data/oxford102.dataset ]; then
