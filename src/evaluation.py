@@ -192,22 +192,26 @@ def openset_weibull(dataloader_test, dataloader_train, netC):
     weibull_scores = np.array(weibull_scores)
     logits = np.array(logits)
 
-    # The following is as close as possible to the spirit of
+    # The following is as close as possible to the precise formulation in
     #   https://arxiv.org/pdf/1511.06233.pdf
-    N, K = logits.shape
-    alpha = np.ones((N, K))
-    for i in range(N):
-        alpha[i][logits[i].argsort()] = np.arange(K) / (K - 1)
-    adjusted_scores = alpha * weibull_scores + (1 - alpha)
-    prob_open_set = (logits * (1 - adjusted_scores)).sum(axis=1)
+    #N, K = logits.shape
+    #alpha = np.ones((N, K))
+    #for i in range(N):
+    #    alpha[i][logits[i].argsort()] = np.arange(K) / (K - 1)
+    #adjusted_scores = alpha * weibull_scores + (1 - alpha)
+    #prob_open_set = (logits * (1 - adjusted_scores)).sum(axis=1)
+    #return prob_open_set
 
+    # But this is better
     # Logits must be positive (lower w score should mean lower probability)
     #shifted_logits = (logits - np.expand_dims(logits.min(axis=1), -1))
     #adjusted_scores = alpha * weibull_scores + (1 - alpha)
     #openmax_scores = -np.log(np.sum(np.exp(shifted_logits * adjusted_scores), axis=1))
     #return np.array(openmax_scores)
 
-    return prob_open_set
+    # And this is better still
+    openmax_scores = -np.log(np.sum(np.exp(logits * weibull_scores), axis=1))
+    return np.array(openmax_scores)
 
 
 def openset_kplusone(dataloader, netC):
