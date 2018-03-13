@@ -19,7 +19,7 @@ done < requirements.txt
 if [ ! -f /mnt/data/svhn-04.dataset ]; then
     python src/datasets/download_svhn.py
 fi
-if [ ! -f /mnt/data/cifar10-animals.dataset ]; then
+if [ ! -f /mnt/data/cifar10-split0a.dataset ]; then
     python src/datasets/download_cifar10.py
 fi
 if [ ! -f /mnt/data/mnist-not5.dataset ]; then

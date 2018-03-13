@@ -13,6 +13,9 @@ DATASET_PATH = os.path.join(DATA_DIR, DATASET_NAME)
 
 IMAGES_LABELS_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
 
+CIFAR_CLASSES = ['airplane', 'automobile', 'bird', 'cat', 'deer',
+                 'dog', 'frog', 'horse', 'ship', 'truck']
+
 
 def main():
     print("{} dataset download script initializing...".format(DATASET_NAME))
@@ -54,7 +57,7 @@ def main():
         example['fold'] = 'test'
         examples.append(example)
 
-    print("Saving .dataset file...")
+    print("Saving .dataset files...")
     output_filename = '{}/{}.dataset'.format(DATA_DIR, DATASET_NAME)
     save_image_dataset(examples, output_filename)
 
@@ -66,6 +69,22 @@ def main():
     machine_filename = '{}/{}-machines.dataset'.format(DATA_DIR, DATASET_NAME)
     save_image_dataset(machines, machine_filename)
 
+    splits = [
+        [3, 6, 7, 8],
+        [1, 2, 4, 6],
+        [2, 3, 4, 9],
+        [0, 1, 2, 6],
+        [4, 5, 6, 9],
+    ]
+
+    for idx, split in enumerate(splits):
+        unknown_classes = [cifar_class(i) for i in split]
+        known_examples = [e for e in examples if e['label'] not in unknown_classes]
+        unknown_examples = [e for e in examples if e['label'] in unknown_classes]
+        known_filename = '{}/{}-split{}a.dataset'.format(DATA_DIR, DATASET_NAME, idx)
+        unknown_filename = '{}/{}-split{}b.dataset'.format(DATA_DIR, DATASET_NAME, idx)
+        save_image_dataset(known_examples, known_filename)
+        save_image_dataset(unknown_examples, unknown_filename)
     print("Finished writing datasets")
 
 
@@ -84,10 +103,7 @@ def make_example(label, filename, data):
 
 
 def cifar_class(label_idx):
-    classes = [
-            'airplane', 'automobile', 'bird', 'cat', 'deer',
-            'dog', 'frog', 'horse', 'ship', 'truck']
-    return classes[label_idx]
+    return CIFAR_CLASSES[label_idx]
 
 
 def is_animal(label):
