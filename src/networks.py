@@ -52,8 +52,11 @@ def save_networks(networks, epoch, result_dir):
         torch.save(weights, filename)
 
 
-def get_optimizers(networks, lr=.0001, beta1=.5, beta2=.999, weight_decay=.0, **options):
+def get_optimizers(networks, lr=.0001, beta1=.5, beta2=.999, weight_decay=.0, finetune=False, **options):
     optimizers = {}
+    if finetune:
+        lr /= 10
+        print("Fine-tuning mode activated, dropping learning rate to {}".format(lr))
     for name in networks:
         net = networks[name]
         optimizers[name] = optim.Adam(net.parameters(), lr=lr, betas=(beta1, beta2), weight_decay=weight_decay)

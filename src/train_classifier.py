@@ -24,7 +24,7 @@ from evaluation import save_evaluation
 options = load_options(options)
 dataloader = FlexibleCustomDataloader(fold='train', **options)
 networks = build_networks(dataloader.num_classes, **options)
-optimizers = get_optimizers(networks, **options)
+optimizers = get_optimizers(networks, finetune=True, **options)
 
 eval_dataloader = CustomDataloader(last_batch=True, shuffle=False, fold='test', **options)
 

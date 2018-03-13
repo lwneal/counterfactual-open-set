@@ -33,8 +33,8 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
 fi
 
 GAN_EPOCHS=10  # Must be two digits for the cp command to work
-CLASSIFIER_EPOCHS=3
-CF_COUNT=30
+CLASSIFIER_EPOCHS=1
+CF_COUNT=10
 GENERATOR_MODE=open_set
 #GENERATOR_MODE=ge_et_al
 
