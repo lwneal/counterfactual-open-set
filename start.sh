@@ -35,7 +35,7 @@ fi
 GAN_EPOCHS=30
 CLASSIFIER_EPOCHS=3
 CF_COUNT=30
-GENERATOR_MODE=counterfactual
+GENERATOR_MODE=open_set
 #GENERATOR_MODE=ge_et_al
 
 
@@ -52,7 +52,7 @@ for i in `seq 10`; do
     python src/generate_${GENERATOR_MODE}.py --result_dir . --count $CF_COUNT
 
     # Automatically label the rightmost column in each grid (ignore the others)
-    python src/auto_label_${GENERATOR_MODE}.py --output_filename generated_images_${GENERATOR_MODE}.dataset
+    python src/auto_label.py --output_filename generated_images_${GENERATOR_MODE}.dataset
 
     # Train a new classifier, now using the aux_dataset containing the counterfactuals
     python src/train_classifier.py --epochs $CLASSIFIER_EPOCHS --aux_dataset generated_images_${GENERATOR_MODE}.dataset

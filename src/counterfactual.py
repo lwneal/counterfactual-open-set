@@ -63,6 +63,37 @@ def generate_counterfactual(networks, dataloader, **options):
     return images
 
 
+# Generates 'unknown unknown' images unlike any known class
+def generate_open_set(networks, dataloader, **options):
+    """
+    # TODO: Fix Dropout/BatchNormalization outside of training
+    for net in networks:
+        networks[net].eval()
+    """
+    result_dir = options['result_dir']
+
+    # Start with randomly-selected images from the dataloader
+    start_images, _ = dataloader.get_batch()
+
+    openset_class = dataloader.num_classes
+    images = generate_counterfactual_column(networks, start_images, openset_class, **options)
+    images = np.array(images).transpose((0,2,3,1))
+
+    dummy_class = 0
+    video_filename = make_video_filename(result_dir, dataloader, dummy_class, dummy_class, label_type='grid')
+
+    # Save the images in npy/jpg format as input for the labeling system
+    trajectory_filename = video_filename.replace('.mjpeg', '.npy')
+    np.save(trajectory_filename, images)
+    imutil.show(images, display=False, filename=video_filename.replace('.mjpeg', '.jpg'))
+
+    # Save the images in jpg format to display to the user
+    name = 'counterfactual_{}.jpg'.format(int(time.time()))
+    jpg_filename = os.path.join(result_dir, 'images', name)
+    imutil.show(images, filename=jpg_filename)
+    return images
+
+
 def generate_counterfactual_column(networks, start_images, target_class, **options):
     netG = networks['generator']
     netC = networks['classifier_k']
