@@ -196,7 +196,7 @@ def openset_weibull(dataloader_test, dataloader_train, netC):
     for i in range(N):
         alpha[i][logits[i].argsort()] = np.arange(K) / (K - 1)
     adjusted_scores = alpha * weibull_scores + (1 - alpha)
-    prob_open_set = (logits * (1 - weibull_scores)).sum(axis=1)
+    prob_open_set = (logits * (1 - adjusted_scores)).sum(axis=1)
 
     # Logits must be positive (lower w score should mean lower probability)
     #shifted_logits = (logits - np.expand_dims(logits.min(axis=1), -1))
