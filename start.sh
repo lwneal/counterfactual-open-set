@@ -61,3 +61,5 @@ for i in `seq 10`; do
     python src/evaluate_classifier.py --result_dir . --aux_dataset generated_images_${GENERATOR_MODE}.dataset
 done
 python src/evaluate_classifier.py --result_dir . --mode weibull-kplusone
+
+./print_results.sh
