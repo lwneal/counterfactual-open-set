@@ -106,10 +106,9 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netG.zero_grad()
         netE.zero_grad()
 
-        # Minimize reconstruction loss of generated images
-        generated = netG(make_noise(batch_size, latent_size, sample_scale), sample_scale)
-        reconstructed = netG(netE(generated, ac_scale), ac_scale)
-        err_reconstruction = torch.mean(torch.abs(generated - reconstructed)) * options['reconstruction_weight']
+        # Minimize reconstruction loss
+        reconstructed = netG(netE(images, ac_scale), ac_scale)
+        err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
         log.collect('Pixel Reconstruction Loss', err_reconstruction)
 

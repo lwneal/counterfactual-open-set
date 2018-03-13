@@ -16,7 +16,7 @@ while read p; do
 done < requirements.txt
 
 # TODO: do this in python, based on --dataset
-if [ ! -f /mnt/data/svhn-04.dataset ]; then
+if [ ! -f /mnt/data/svhn-split0a.dataset ]; then
     python src/datasets/download_svhn.py
 fi
 if [ ! -f /mnt/data/cifar10-split0a.dataset ]; then

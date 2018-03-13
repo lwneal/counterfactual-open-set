@@ -103,17 +103,34 @@ def download(filename, url):
 def save_examples(examples):
     print("Writing {} items to {}".format(len(examples), DATA_DIR))
 
-    with open('{}/svhn.dataset'.format(DATA_DIR), 'w') as fp:
+    save_image_dataset('{}/svhn.dataset'.format(DATA_DIR), examples)
+    save_image_dataset('{}/svhn-04.dataset'.format(DATA_DIR),
+	[e for e in examples if int(e['label']) < 5])
+    save_image_dataset('{}/svhn-59.dataset'.format(DATA_DIR),
+	[e for e in examples if int(e['label']) >= 5])
+
+    splits = [
+        [3, 6, 7, 8],
+        [1, 2, 4, 6],
+        [2, 3, 4, 9],
+        [0, 1, 2, 6],
+        [4, 5, 6, 9],
+    ]
+
+    for idx, split in enumerate(splits):
+        known_examples = [e for e in examples if int(e['label']) not in split]
+        unknown_examples = [e for e in examples if int(e['label']) in split]
+        known_filename = '{}/{}-split{}a.dataset'.format(DATA_DIR, DATASET_NAME, idx)
+        unknown_filename = '{}/{}-split{}b.dataset'.format(DATA_DIR, DATASET_NAME, idx)
+        save_image_dataset(known_filename, known_examples)
+        save_image_dataset(unknown_filename, unknown_examples)
+
+
+def save_image_dataset(filename, examples):
+    with open(filename, 'w') as fp:
         for ex in examples:
-            fp.write(json.dumps(ex) + '\n')
-    with open('{}/svhn-04.dataset'.format(DATA_DIR), 'w') as fp:
-        for ex in examples:
-            if int(ex['label']) < 5:
-                fp.write(json.dumps(ex) + '\n')
-    with open('{}/svhn-59.dataset'.format(DATA_DIR), 'w') as fp:
-        for ex in examples:
-            if int(ex['label']) >= 5:
-                fp.write(json.dumps(ex) + '\n')
+            fp.write(json.dumps(ex))
+            fp.write('\n')
 
 
 if __name__ == '__main__':
