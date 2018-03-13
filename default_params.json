@@ -5,13 +5,13 @@
   "delete_background": false,
   "hypothesis": "A simple test dataset",
   "image_size": 32,
-  "latent_size": 4,
+  "latent_size": 8,
   "random_horizontal_flip": false,
   "reconstruction_weight": 1.0,
-  "generator_weight": 0.001,
-  "discriminator_weight": 0.001,
+  "generator_weight": 1.0,
+  "discriminator_weight": 1.0,
   "cf_speed": 0.1,
   "cf_max_iters": 100,
   "cf_distance_weight": 1.0,
-  "cf_gan_scale": 4
+  "cf_gan_scale": 2
 }

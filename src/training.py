@@ -35,8 +35,8 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         labels = Variable(class_labels)
 
         #ac_scale = random.choice([1, 2, 4, 8])
-        ac_scale = 4
-        sample_scale = 4
+        ac_scale = 2
+        sample_scale = 2
         ############################
         # Discriminator Updates
         ###########################
@@ -51,7 +51,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         loss_fake_sampled.backward()
 
         # Classify autoencoded images as fake
-        """
         more_images, more_labels = dataloader.get_batch()
         more_images = Variable(more_images)
         fake_images = netG(netE(more_images, ac_scale), ac_scale)
@@ -60,7 +59,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         loss_fake_ac = logits_fake.mean() * options['discriminator_weight']
         log.collect('Discriminator Autoencoded', loss_fake_ac)
         loss_fake_ac.backward()
-        """
 
         # Classify real examples as real
         logits = netD(images)[:,0]
@@ -108,9 +106,10 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netG.zero_grad()
         netE.zero_grad()
 
-        # Minimize reconstruction loss
-        reconstructed = netG(netE(images, ac_scale), ac_scale)
-        err_reconstruction = torch.mean(torch.abs(images - reconstructed)) * options['reconstruction_weight']
+        # Minimize reconstruction loss of generated images
+        generated = netG(make_noise(batch_size, latent_size, sample_scale), sample_scale)
+        reconstructed = netG(netE(generated, ac_scale), ac_scale)
+        err_reconstruction = torch.mean(torch.abs(generated - reconstructed)) * options['reconstruction_weight']
         err_reconstruction.backward()
         log.collect('Pixel Reconstruction Loss', err_reconstruction)
 
