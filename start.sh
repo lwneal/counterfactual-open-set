@@ -32,7 +32,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-GAN_EPOCHS=10
+GAN_EPOCHS=10  # Must be two digits for the cp command to work
 CLASSIFIER_EPOCHS=3
 CF_COUNT=30
 GENERATOR_MODE=open_set
@@ -45,6 +45,10 @@ python src/train_gan.py --epochs $GAN_EPOCHS
 # Baseline: Evaluate the regular classifier (C_k+1)
 python src/evaluate_classifier.py --result_dir . --mode baseline
 python src/evaluate_classifier.py --result_dir . --mode weibull
+
+# HACK: when training K+1 version, pre-heat with the K-class version
+# This means that the K+1 classifier receives strictly MORE training
+cp checkpoints/classifier_k_epoch_00${GAN_EPOCHS}.pth checkpoints/classifier_kplusone_epoch_00${GAN_EPOCHS}.pth
 
 # For 100, 200, ... generated examples:
 for i in `seq 10`; do
@@ -59,7 +63,11 @@ for i in `seq 10`; do
 
     # Evaluate it one more time just for good measure
     python src/evaluate_classifier.py --result_dir . --aux_dataset generated_images_${GENERATOR_MODE}.dataset
+    # Confidence ratio: better evaluation function than the default
+    python src/evaluate_classifier.py --result_dir . --mode fuxin
 done
+
+# This is for generative openmax
 python src/evaluate_classifier.py --result_dir . --mode weibull-kplusone
 
 ./print_results.sh
