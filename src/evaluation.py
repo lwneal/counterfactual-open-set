@@ -110,6 +110,9 @@ def get_openset_scores(dataloader, networks, dataloader_train=None, **options):
         openset_scores = openset_kplusone(dataloader, networks['classifier_k'])
     elif options.get('mode') == 'autoencoder':
         openset_scores = openset_autoencoder(dataloader, networks)
+    elif options.get('mode') == 'fuxin':
+        print('Using FUXIN mode')
+        openset_scores = openset_fuxin(dataloader, networks['classifier_kplusone'])
     else:
         print('Using DEFAULT mode')
         openset_scores = openset_kplusone(dataloader, networks['classifier_kplusone'])
@@ -218,6 +221,24 @@ def openset_kplusone(dataloader, netC):
         prob_known = z / (z + 1)
         prob_unknown = 1 - prob_known
         openset_scores.extend(prob_unknown.data.cpu().numpy())
+    return np.array(openset_scores)
+
+
+def openset_fuxin(dataloader, netC):
+    openset_scores = []
+    for i, (images, labels) in enumerate(dataloader):
+        images = Variable(images, volatile=True)
+        logits = netC(images)
+        augmented_logits = F.pad(logits, pad=(0,1))
+        # The implicit K+1th class (the open set class) is computed
+        #  by assuming an extra linear output with constant value 0
+        preds = F.softmax(augmented_logits)
+        #preds = augmented_logits
+        prob_unknown = preds[:, -1]
+        prob_known = preds[:, :-1].max(dim=1)[0]
+        prob_open = prob_unknown - prob_known
+
+        openset_scores.extend(prob_open.data.cpu().numpy())
     return np.array(openset_scores)
 
 
