@@ -114,6 +114,18 @@ def download_mnist(latest_md5):
         fp_set.close()
         fp_openset.close()
 
+    # For experiments varying openness
+    for class_idx in [2, 3, 4, 5, 6, 7]:
+        fp_set = open('mnist-0{}.dataset'.format(class_idx), 'w')
+        fp_openset = open('mnist-{}9.dataset'.format(class_idx), 'w')
+        for example in train + test + val:
+            if int(example['label']) <= class_idx:
+                fp_set.write(json.dumps(example) + '\n')
+            else:
+                fp_openset.write(json.dumps(example) + '\n')
+        fp_set.close()
+        fp_openset.close()
+
 
 
 if __name__ == '__main__':
