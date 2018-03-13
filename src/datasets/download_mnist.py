@@ -11,6 +11,7 @@ from tqdm import tqdm
 DATA_DIR = '/mnt/data'
 DOWNLOAD_URL = 'https://s3.amazonaws.com/img-datasets/mnist.npz'
 LATEST_MD5 = ''
+DATASET_NAME = 'mnist'
 
 
 def save_set(fold, x, y, suffix='png'):
@@ -126,6 +127,29 @@ def download_mnist(latest_md5):
         fp_set.close()
         fp_openset.close()
 
+    # Splits to match the CIFAR and SVHN experiments
+    splits = [
+        [3, 6, 7, 8],
+        [1, 2, 4, 6],
+        [2, 3, 4, 9],
+        [0, 1, 2, 6],
+        [4, 5, 6, 9],
+    ]
+    examples = train + test + val
+    for idx, split in enumerate(splits):
+        known_examples = [e for e in examples if int(e['label']) not in split]
+        unknown_examples = [e for e in examples if int(e['label']) in split]
+        known_filename = '{}/{}-split{}a.dataset'.format(DATA_DIR, DATASET_NAME, idx)
+        unknown_filename = '{}/{}-split{}b.dataset'.format(DATA_DIR, DATASET_NAME, idx)
+        save_image_dataset(known_filename, known_examples)
+        save_image_dataset(unknown_filename, unknown_examples)    
+
+
+def save_image_dataset(filename, examples):
+    with open(filename, 'w') as fp:
+        for ex in examples:
+            fp.write(json.dumps(ex))
+            fp.write('\n')
 
 
 if __name__ == '__main__':
