@@ -32,7 +32,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-GAN_EPOCHS=30
+GAN_EPOCHS=10
 CLASSIFIER_EPOCHS=3
 CF_COUNT=30
 GENERATOR_MODE=open_set
