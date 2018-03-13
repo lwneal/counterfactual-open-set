@@ -34,8 +34,4 @@ for epoch in range(start_epoch, start_epoch + options['epochs']):
     eval_results = evaluate_with_comparison(networks, eval_dataloader, **options)
     pprint(eval_results)
     save_evaluation(eval_results, options['result_dir'], epoch)
-    if epoch % 10 == 0:
-        save_networks(networks, epoch, options['result_dir'])
-
-# TODO: Deal with wasteful copies of the non-classifier networks
-save_networks(networks, epoch, options['result_dir'])
+    save_networks(networks, epoch, options['result_dir'])
