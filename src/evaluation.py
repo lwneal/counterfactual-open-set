@@ -107,7 +107,7 @@ def get_openset_scores(dataloader, networks, dataloader_train=None, **options):
     elif options.get('mode') and 'weibull' in options['mode']:
         openset_scores = openset_weibull(dataloader, dataloader_train, networks['classifier_kplusone'])
     elif options.get('mode') == 'baseline':
-        openset_scores = openset_kplusone(dataloader, networks['classifier_k'])
+        openset_scores = openset_softmax_confidence(dataloader, networks['classifier_k'])
     elif options.get('mode') == 'autoencoder':
         openset_scores = openset_autoencoder(dataloader, networks)
     elif options.get('mode') == 'fuxin':
@@ -209,7 +209,7 @@ def openset_weibull(dataloader_test, dataloader_train, netC):
     #openmax_scores = -np.log(np.sum(np.exp(shifted_logits * adjusted_scores), axis=1))
     #return np.array(openmax_scores)
 
-    # And this is better still
+    # Let's just ignore alpha and ignore shifting
     openmax_scores = -np.log(np.sum(np.exp(logits * weibull_scores), axis=1))
     return np.array(openmax_scores)
 
@@ -226,6 +226,15 @@ def openset_kplusone(dataloader, netC):
         prob_unknown = 1 - prob_known
         openset_scores.extend(prob_unknown.data.cpu().numpy())
     return np.array(openset_scores)
+
+
+def openset_softmax_confidence(dataloader, netC):
+    openset_scores = []
+    for i, (images, labels) in enumerate(dataloader):
+        images = Variable(images, volatile=True)
+        preds = F.softmax(netC(images), dim=1)
+        openset_scores.extend(preds.max(dim=1)[0].data.cpu().numpy())
+    return -np.array(openset_scores)
 
 
 def openset_fuxin(dataloader, netC):
