@@ -1,19 +1,35 @@
+import sys
 import numpy as np
 
 import plotting  # init matplotlib
 import matplotlib.pyplot as plt
 from imutil import show
 
+output_filename = sys.argv[1]
+
+#dataset = 'cifar'
+dataset = 'svhn'
+
 curves = [
-    ('Softmax Thresholding', 'roc_cifar_baseline.npy'),
-    ('OpenMax', 'roc_cifar_openmax.npy'),
-    ('G-OpenMax', 'roc_cifar_gopenmax.npy'),
-    ('Ours',    'roc_cifar_ours.npy'),
+    ('--', 'Softmax Thresholding', 'roc_{}_baseline.npy'.format(dataset)),
+    ('-.', 'OpenMax', 'roc_{}_openmax.npy'.format(dataset)),
+    (':', 'G-OpenMax', 'roc_{}_gopenmax.npy'.format(dataset)),
+    ('-', 'Ours',    'roc_{}_ours.npy'.format(dataset)),
 ]
+names = list(zip(*curves))[1]
 
-for name, filename in curves:
+for dots, name, filename in curves:
     x, y = np.load(filename)
-    plt.plot(x, y)
-plt.legend(list(zip(*curves))[0])
+    plt.plot(x, y, linestyle=dots)
+plt.title('Open Set Detection: SVHN', fontsize=18)
+plt.xlabel('False Positive Rate', fontsize=16)
+plt.ylabel('True Positive Rate', fontsize=16)
 
+# Zoomed-in version
+plt.xscale('log')
+plt.xlim(.01)
+#plt.yscale('log')
+
+plt.legend(names)
 show(plt.gca())
+plt.savefig(output_filename)
