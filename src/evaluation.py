@@ -71,7 +71,7 @@ def evaluate_openset(networks, dataloader_on, dataloader_off, **options):
     y_true = np.array([0] * len(d_scores_on) + [1] * len(d_scores_off))
     y_discriminator = np.concatenate([d_scores_on, d_scores_off])
 
-    auc_d, plot_d = plot_roc(y_true, y_discriminator, 'Discriminator ROC vs {}'.format(dataloader_off.dsf.name))
+    auc_d, plot_d = plot_roc(y_true, y_discriminator, 'Discriminator ROC vs {}'.format(dataloader_off.dsf.name), **options)
 
     save_plot(plot_d, 'roc_discriminator', **options)
 
@@ -255,10 +255,13 @@ def openset_fuxin(dataloader, netC):
     return np.array(openset_scores)
 
 
-def plot_roc(y_true, y_score, title="Receiver Operating Characteristic"):
+def plot_roc(y_true, y_score, title="Receiver Operating Characteristic", **options):
     fpr, tpr, thresholds = roc_curve(y_true, y_score)
     auc_score = roc_auc_score(y_true, y_score)
     plot = plot_xy(fpr, tpr, x_axis="False Positive Rate", y_axis="True Positive Rate", title=title)
+    if options.get('roc_output'):
+        print("Saving ROC scores to file {}".format(options['roc_output']))
+        np.save(options['roc_output'], (fpr, tpr))
     return auc_score, plot
 
 

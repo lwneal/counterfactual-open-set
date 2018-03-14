@@ -12,6 +12,7 @@ parser.add_argument('--epoch', type=int, help='Epoch to evaluate (latest epoch i
 parser.add_argument('--comparison_dataset', type=str, help='Dataset for off-manifold comparison')
 parser.add_argument('--aux_dataset', type=str, help='aux_dataset used in train_classifier')
 parser.add_argument('--mode', default='', help='One of: default, weibull, weibull-kplus1, baseline')
+parser.add_argument('--roc_output', type=str, help='Optional filename for ROC data output')
 options = vars(parser.parse_args())
 
 # Import the rest of the project
