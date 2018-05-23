@@ -79,7 +79,7 @@ if __name__ == '__main__':
     for line in open('val/val_annotations.txt').readlines():
         jpg_name, wnid, x0, y0, x1, y1 = line.split()
         examples.append({
-            'filename': os.path.join(DATASET_NAME, 'val', jpg_name),
+            'filename': os.path.join(DATASET_NAME, 'val', 'images', jpg_name),
             'label': wnid_names[wnid],
             'fold': 'test',
         })
