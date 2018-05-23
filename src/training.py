@@ -5,7 +5,7 @@ import random
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-import imutil
+from gnomehat import imutil
 from vector import make_noise
 from dataloader import FlexibleCustomDataloader
 from series import TimeSeries
@@ -124,7 +124,7 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
         netC.zero_grad()
 
         # Classify real examples into the correct K classes with hinge loss
-        classifier_logits = netC(images) 
+        classifier_logits = netC(images)
         errC = F.softplus(classifier_logits * -labels).mean()
         errC.backward()
         log.collect('Classifier Loss', errC)

@@ -67,24 +67,24 @@ class encoder32(nn.Module):
         x = self.dr1(x)
         x = self.conv1(x)
         x = self.bn1(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv2(x)
         x = self.bn2(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv3(x)
         x = self.bn3(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = self.dr2(x)
         x = self.conv4(x)
         x = self.bn4(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv5(x)
         x = self.bn5(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv6(x)
         x = self.bn6(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         # Image representation is now 8 x 8
         if output_scale == 8:
@@ -96,13 +96,13 @@ class encoder32(nn.Module):
         x = self.dr3(x)
         x = self.conv7(x)
         x = self.bn7(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv8(x)
         x = self.bn8(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv9(x)
         x = self.bn9(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         # Image representation is now 4x4
         if output_scale == 4:
@@ -110,11 +110,11 @@ class encoder32(nn.Module):
             x = x.view(batch_size, -1)
             x = clamp_to_unit_sphere(x, 4*4)
             return x
-        
+
         x = self.dr4(x)
         x = self.conv10(x)
         x = self.bn10(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         # Image representation is now 2x2
         if output_scale == 2:
@@ -164,7 +164,7 @@ class generator32(nn.Module):
             x = self.conv2_in(x)
         if input_scale <= 2:
             x = self.conv2(x)
-            x = nn.LeakyReLU(inplace=True)(x)
+            x = nn.LeakyReLU()(x)
             x = self.bn2(x)
 
         # 512 x 4 x 4
@@ -173,7 +173,7 @@ class generator32(nn.Module):
             x = self.conv3_in(x)
         if input_scale <= 4:
             x = self.conv3(x)
-            x = nn.LeakyReLU(inplace=True)(x)
+            x = nn.LeakyReLU()(x)
             x = self.bn3(x)
 
         # 256 x 8 x 8
@@ -182,7 +182,7 @@ class generator32(nn.Module):
             x = self.conv4_in(x)
         if input_scale <= 8:
             x = self.conv4(x)
-            x = nn.LeakyReLU(inplace=True)(x)
+            x = nn.LeakyReLU()(x)
             x = self.bn4(x)
         # 128 x 16 x 16
         x = self.conv5(x)
@@ -234,35 +234,35 @@ class multiclassDiscriminator32(nn.Module):
         x = self.dr1(x)
         x = self.conv1(x)
         x = self.bn1(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv2(x)
         x = self.bn2(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv3(x)
         x = self.bn3(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = self.dr2(x)
         x = self.conv4(x)
         x = self.bn4(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv5(x)
         x = self.bn5(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv6(x)
         x = self.bn6(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = self.dr3(x)
         x = self.conv7(x)
         x = self.bn7(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv8(x)
         x = self.bn8(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv9(x)
         x = self.bn9(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = x.view(batch_size, -1)
         if return_features:
@@ -319,35 +319,35 @@ class classifier32(nn.Module):
         x = self.dr1(x)
         x = self.conv1(x)
         x = self.bn1(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv2(x)
         x = self.bn2(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv3(x)
         x = self.bn3(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = self.dr2(x)
         x = self.conv4(x)
         x = self.bn4(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv5(x)
         x = self.bn5(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv6(x)
         x = self.bn6(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = self.dr3(x)
         x = self.conv7(x)
         x = self.bn7(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv8(x)
         x = self.bn8(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = self.conv9(x)
         x = self.bn9(x)
-        x = nn.LeakyReLU(0.2, inplace=True)(x)
+        x = nn.LeakyReLU(0.2)(x)
 
         x = x.view(batch_size, -1)
         if return_features:

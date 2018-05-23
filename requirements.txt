@@ -1,3 +1,4 @@
+git+http://github.com/lwneal/gnomehat
 numpy
 scipy
 torch

@@ -9,7 +9,7 @@ different array each time to_array is called with the same example
 import os
 import numpy as np
 import random
-import imutil
+from gnomehat import imutil
 
 DATA_DIR = '/mnt/data'
 
@@ -27,7 +27,7 @@ class Converter(object):
 # Crops, resizes, normalizes, performs any desired augmentations
 # Outputs images as eg. 32x32x3 np.array or eg. 3x32x32 torch.FloatTensor
 class ImageConverter(Converter):
-    def __init__(self, 
+    def __init__(self,
             dataset,
             image_size=32,
             crop_to_bounding_box=True,
@@ -52,8 +52,8 @@ class ImageConverter(Converter):
         box = example.get('box') if self.bounding_box else None
         # HACK
         #box = (.25, .75, 0, 1)
-        img = imutil.decode_jpg(filename, 
-                resize_to=self.img_shape, 
+        img = imutil.decode_jpg(filename,
+                resize_to=self.img_shape,
                 crop_to_box=box)
         if self.delete_background:
             seg_filename = os.path.expanduser(example['segmentation'])
