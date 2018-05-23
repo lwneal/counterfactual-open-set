@@ -6,7 +6,8 @@ from torch import autograd
 from torch.autograd import Variable
 from torch.nn import functional as F
 from vector import clamp_to_unit_sphere
-from series import TimeSeries
+
+from gnomehat.series import TimeSeries
 from gnomehat import imutil
 
 

@@ -7,7 +7,6 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 from vector import clamp_to_unit_sphere
 import imutil
-from series import TimeSeries
 
 
 def to_torch(z, requires_grad=False):
