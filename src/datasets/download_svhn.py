@@ -11,8 +11,6 @@ from PIL import Image
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from imutil import show
-
 DOWNLOAD_URL_TRAIN = 'http://ufldl.stanford.edu/housenumbers/train.tar.gz'
 DOWNLOAD_URL_TEST = 'http://ufldl.stanford.edu/housenumbers/test.tar.gz'
 
