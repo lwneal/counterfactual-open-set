@@ -13,6 +13,9 @@ from gnomehat.series import TimeSeries
 from gradient_penalty import calc_gradient_penalty
 
 
+log = TimeSeries('Training GAN')
+
+
 def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     for net in networks.values():
         net.train()
@@ -27,8 +30,6 @@ def train_gan(networks, optimizers, dataloader, epoch=None, **options):
     result_dir = options['result_dir']
     batch_size = options['batch_size']
     latent_size = options['latent_size']
-
-    log = TimeSeries('Training GAN epoch {}'.format(epoch), len(dataloader))
 
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)
@@ -183,8 +184,6 @@ def train_classifier(networks, optimizers, dataloader, epoch=None, **options):
         raise ValueError("Aux Dataset not available")
     print("Using aux_dataset {}".format(dataset_filename))
     aux_dataloader = FlexibleCustomDataloader(dataset_filename, batch_size=batch_size, image_size=image_size)
-
-    log = TimeSeries('Training Classifier epoch {}'.format(epoch))
 
     for i, (images, class_labels) in enumerate(dataloader):
         images = Variable(images)

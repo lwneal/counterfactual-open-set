@@ -75,18 +75,18 @@ if __name__ == '__main__':
                 'fold': 'train',
             })
 
-    # Collect validation examples
+    # Use validation set as a test set
     for line in open('val/val_annotations.txt').readlines():
         jpg_name, wnid, x0, y0, x1, y1 = line.split()
         examples.append({
             'filename': os.path.join(DATASET_NAME, 'val', jpg_name),
             'label': wnid_names[wnid],
-            'fold': 'validation',
+            'fold': 'test',
         })
     save_dataset(examples, '{}/{}.dataset'.format(DATA_ROOT_DIR, DATASET_NAME))
 
+    # Put the unlabeled test set in a separate dataset
     test_examples = []
-    # Collect unlabeled test examples
     for jpg_name in os.listdir('test/images'):
         test_examples.append({
             'filename': os.path.join(DATASET_NAME, 'test', 'images', jpg_name),

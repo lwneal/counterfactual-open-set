@@ -95,6 +95,7 @@ def generate_open_set(networks, dataloader, **options):
     return images
 
 
+log = TimeSeries('Counterfactual')
 def generate_counterfactual_column(networks, start_images, target_class, **options):
     netG = networks['generator']
     netC = networks['classifier_k']
@@ -113,7 +114,6 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
     target_label = Variable(torch.LongTensor(cf_batch_size)).cuda()
     target_label[:] = target_class
 
-    log = TimeSeries()
     for i in range(max_iters):
         z = to_torch(z_value, requires_grad=True)
         z_0 = to_torch(z0_value)

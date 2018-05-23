@@ -1,7 +1,7 @@
 {
   "batch_size": 64,
-  "dataset": "/mnt/nfs/data/cifar10-animals.dataset",
-  "comparison_dataset": "/mnt/nfs/data/cifar10-machines.dataset",
+  "dataset": "/mnt/nfs/data/tiny_imagenet.dataset",
+  "comparison_dataset": "/mnt/nfs/data/tiny_imagenet.dataset",
   "delete_background": false,
   "hypothesis": "A simple test dataset",
   "image_size": 32,

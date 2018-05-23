@@ -32,7 +32,7 @@ if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
 
-GAN_EPOCHS=10  # Must be two digits for the cp command to work
+GAN_EPOCHS=30  # Must be two digits for the cp command to work
 CLASSIFIER_EPOCHS=1
 CF_COUNT=10
 #GENERATOR_MODE=open_set
