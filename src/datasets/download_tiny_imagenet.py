@@ -10,7 +10,7 @@ DATASET_DIR = os.path.join(DATA_ROOT_DIR, 'tiny_imagenet')
 DATASET_NAME = 'tiny_imagenet'
 
 ANIMAL_CLASSES = [
-    "dragonfly, darning needle, devil's darning needle, sewing needle, snake "
+    "dragonfly, darning needle, devil's darning needle, sewing needle, snake feeder, snake doctor, mosquito hawk, skeeter hawk",
     'African elephant, Loxodonta africana',
     'American alligator, Alligator mississipiensis',
     'American lobster, Northern lobster, Maine lobster, Homarus americanus',
@@ -56,6 +56,7 @@ ANIMAL_CLASSES = [
     'monarch, monarch butterfly, milkweed butterfly, Danaus plexippus',
     'orangutan, orang, orangutang, Pongo pygmaeus',
     'ox',
+    'scorpion',
     'sea cucumber, holothurian',
     'sea slug, nudibranch',
     'sheep, Ovis canadensis',
