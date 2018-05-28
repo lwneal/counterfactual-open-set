@@ -25,7 +25,7 @@ ANIMAL_CLASSES = [
     'albatross, mollymawk',
     'baboon',
     'bee',
-    'bighorn, bighorn sheep, cimarron, Rocky Mountain bighorn, Rocky Mountain '
+    'bighorn, bighorn sheep, cimarron, Rocky Mountain bighorn, Rocky Mountain sheep, Ovis canadensis',
     'bison',
     'black stork, Ciconia nigra',
     'black widow, Latrodectus mactans',
