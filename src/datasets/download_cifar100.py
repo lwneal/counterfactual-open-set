@@ -13,8 +13,18 @@ DATASET_PATH = os.path.join(DATA_DIR, DATASET_NAME)
 
 IMAGES_LABELS_URL = 'https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'
 
-CIFAR_CLASSES = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-                 'dog', 'frog', 'horse', 'ship', 'truck']
+ANIMAL_CATEGORIES = [
+  "aquatic_mammals",
+  "fish",
+  "insects",
+  "large_carnivores",
+  "large_omnivores_and_herbivores",
+  "medium_mammals",
+  "non-insect_invertebrates",
+  "people",
+  "reptiles",
+  "small_mammals",
+]
 
 
 def main():
@@ -26,19 +36,68 @@ def main():
     print("Downloading {} dataset files to {}...".format(DATASET_NAME, DATASET_PATH))
     download('cifar-100-python.tar.gz', IMAGES_LABELS_URL)
 
-    train_examples = get_examples('train')
-    test_examples = get_examples('test')
+    examples = get_examples('train') + get_examples('test')
 
     dataset_filename = os.path.join(DATA_DIR, 'cifar100.dataset')
     with open(dataset_filename, 'w') as fp:
-        for e in train_examples + test_examples:
+        for e in tqdm(examples):
             fp.write(json.dumps(e) + '\n')
     print('Finished writing dataset {}'.format(dataset_filename))
+
+    animal_examples = [e for e in examples if e['category'] in ANIMAL_CATEGORIES]
+    object_examples = [e for e in examples if e['category'] not in ANIMAL_CATEGORIES]
+
+    print('Writing animals/objects splits...')
+    with open(os.path.join(DATA_DIR, 'cifar100-animals.dataset'), 'w') as fp:
+        for e in tqdm(animal_examples):
+            fp.write(json.dumps(e) + '\n')
+
+    with open(os.path.join(DATA_DIR, 'cifar100-not-animals.dataset'), 'w') as fp:
+        for e in tqdm(object_examples):
+            fp.write(json.dumps(e) + '\n')
+
+    print('Writing label subset splits...')
+    meta = pickle.load(open('cifar-100-python/meta', 'rb'))
+    coarse_label_names = meta['coarse_label_names']
+    fine_label_names = meta['fine_label_names']
+
+    animal_labels = sorted(set(e['label'] for e in animal_examples))
+    object_labels = sorted(set(e['label'] for e in object_examples))
+
+    # From animals, select 10, 20, ... labels
+    with open(os.path.join(DATA_DIR, 'cifar100-animals-10.dataset'), 'w') as fp:
+        for e in tqdm(e for e in examples if e['label'] in animal_labels[:10]):
+            fp.write(json.dumps(e) + '\n')
+    with open(os.path.join(DATA_DIR, 'cifar100-animals-20.dataset'), 'w') as fp:
+        for e in tqdm(e for e in examples if e['label'] in animal_labels[:20]):
+            fp.write(json.dumps(e) + '\n')
+    with open(os.path.join(DATA_DIR, 'cifar100-animals-50.dataset'), 'w') as fp:
+        for e in tqdm(e for e in examples if e['label'] in animal_labels[:50]):
+            fp.write(json.dumps(e) + '\n')
+
+    # From non-animals, select 10, 20, ... labels
+    with open(os.path.join(DATA_DIR, 'cifar100-not-animals-10.dataset'), 'w') as fp:
+        for e in tqdm(e for e in examples if e['label'] in object_labels[:10]):
+            fp.write(json.dumps(e) + '\n')
+    with open(os.path.join(DATA_DIR, 'cifar100-not-animals-20.dataset'), 'w') as fp:
+        for e in tqdm(e for e in examples if e['label'] in object_labels[:20]):
+            fp.write(json.dumps(e) + '\n')
+    with open(os.path.join(DATA_DIR, 'cifar100-not-animals-50.dataset'), 'w') as fp:
+        for e in tqdm(e for e in examples if e['label'] in object_labels[:50]):
+            fp.write(json.dumps(e) + '\n')
+
+    print('Finished writing all datasets')
+
+
 
 
 def get_examples(fold):
     print('Converting CIFAR100 fold {}'.format(fold))
     vals = pickle.load(open('cifar-100-python/{}'.format(fold), 'rb'), encoding='bytes')
+
+    meta = pickle.load(open('cifar-100-python/meta', 'rb'))
+    coarse_label_names = meta['coarse_label_names']
+    fine_label_names = meta['fine_label_names']
 
     fine_labels = vals[b'fine_labels']
     coarse_labels = vals[b'coarse_labels']
@@ -53,11 +112,14 @@ def get_examples(fold):
         png_name = str(filenames[i], 'utf-8')
         filename = os.path.join(DATASET_PATH, png_name)
         Image.fromarray(pixels).save(filename)
+
+        fine_label = fine_label_names[fine_labels[i]]
+        category = coarse_label_names[coarse_labels[i]]
         examples.append({
             'filename': filename.replace(DATA_DIR, ''),
-            'label': fine_labels[i],
-            'category': coarse_labels[i],
-            'fold': fold
+            'label': fine_label,
+            'category': category,
+            'fold': fold,
         })
     print('Wrote {} images for fold {}'.format(len(examples), fold))
     return examples
