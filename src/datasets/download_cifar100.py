@@ -7,7 +7,7 @@ from tqdm import tqdm
 from PIL import Image
 import pickle
 
-DATA_DIR = '/mnt/data'
+DATA_DIR = '/mnt/nfs/data'
 DATASET_NAME = 'cifar100'
 DATASET_PATH = os.path.join(DATA_DIR, DATASET_NAME)
 
@@ -116,7 +116,7 @@ def get_examples(fold):
         fine_label = fine_label_names[fine_labels[i]]
         category = coarse_label_names[coarse_labels[i]]
         examples.append({
-            'filename': filename.replace(DATA_DIR, ''),
+            'filename': filename.replace(DATA_DIR + '/', ''),
             'label': fine_label,
             'category': category,
             'fold': fold,

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import os
+import random
 import numpy as np
 import json
 from subprocess import check_output
 
 
-DATA_ROOT_DIR = '/mnt/data'
+DATA_ROOT_DIR = '/mnt/nfs/data'
 DATASET_DIR = os.path.join(DATA_ROOT_DIR, 'tiny_imagenet')
 DATASET_NAME = 'tiny_imagenet'
 
@@ -164,5 +165,17 @@ if __name__ == '__main__':
             'fold': 'test',
         })
     save_dataset(test_examples, '{}/{}-unlabeled.dataset'.format(DATA_ROOT_DIR, DATASET_NAME))
+
+    # Select a random 10, 50, 100 classes and partition them out
+    classes = list(set(e['label'] for e in examples))
+
+    random.seed(42)
+    for known_classes in [10, 20, 50]:
+        for i in range(5):
+            random.shuffle(classes)
+            known = [e for e in examples if e['label'] in classes[:known_classes]]
+            unknown = [e for e in examples if e['label'] not in classes[:known_classes]]
+            save_dataset(known, '{}/{}-known-{}-split{}a.dataset'.format(DATA_ROOT_DIR, DATASET_NAME, known_classes, i))
+            save_dataset(unknown, '{}/{}-known-{}-split{}b.dataset'.format(DATA_ROOT_DIR, DATASET_NAME, known_classes, i))
 
     print("Finished building dataset {}".format(DATASET_NAME))

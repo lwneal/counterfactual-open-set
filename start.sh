@@ -31,12 +31,15 @@ fi
 if [ ! -f /mnt/data/celeba.dataset ]; then
     python src/datasets/download_celeba.py
 fi
+if [ ! -f /mnt/data/cifar100-animals.dataset ]; then
+    python src/datasets/download_cifar100.py
+fi
 
 GAN_EPOCHS=30  # Must be two digits for the cp command to work
 CLASSIFIER_EPOCHS=1
 CF_COUNT=10
-GENERATOR_MODE=open_set
-#GENERATOR_MODE=ge_et_al
+#GENERATOR_MODE=open_set
+GENERATOR_MODE=ge_et_al
 
 
 # Train the intial generative model (E+G+D+C_k)
