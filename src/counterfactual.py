@@ -130,22 +130,12 @@ def generate_counterfactual_column(networks, start_images, target_class, **optio
                 ) ** 2
             ) * distance_weight
 
-        # This term is kind of a hack and I'd like to remove it
-        color_loss = torch.sum(
-                (
-                    netG(z, gan_scale).mean(dim=-1).mean(dim=-1)
-                    -
-                    Variable(start_images).mean(dim=-1).mean(dim=-1)
-                ) ** 2
-            ) * 1.0
-
-        total_loss = cf_loss + distance_loss + color_loss
+        total_loss = cf_loss + distance_loss
 
         scores = F.softmax(augmented_logits, dim=1)
 
         log.collect('Counterfactual loss', cf_loss)
         log.collect('Distance Loss', distance_loss)
-        log.collect('Color Loss (hack)', color_loss)
         log.collect('Classification as {}'.format(target_class), scores[0][target_class])
         log.print_every(n_sec=1)
 
