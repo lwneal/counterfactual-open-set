@@ -37,9 +37,9 @@ fi
 
 GAN_EPOCHS=30  # Must be two digits for the cp command to work
 CLASSIFIER_EPOCHS=1
-CF_COUNT=10
-#GENERATOR_MODE=open_set
-GENERATOR_MODE=ge_et_al
+CF_COUNT=50
+GENERATOR_MODE=open_set
+#GENERATOR_MODE=ge_et_al
 
 
 # Train the intial generative model (E+G+D+C_k)
