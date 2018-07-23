@@ -3,7 +3,7 @@ import network_definitions
 import torch
 from torch import optim
 from torch import nn
-from gnomehat.imutil import ensure_directory_exists
+from imutil import ensure_directory_exists
 
 
 def build_networks(num_classes, epoch=None, latent_size=10, batch_size=64, **options):

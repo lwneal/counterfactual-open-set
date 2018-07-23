@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-from gnomehat.imutil import show
+from imutil import show
 
 # Hack to keep matplotlib from crashing when run without X
 import matplotlib

@@ -5,10 +5,10 @@ import random
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from gnomehat import imutil
 from vector import make_noise
 from dataloader import FlexibleCustomDataloader
-from gnomehat.series import TimeSeries
+import imutil
+from logutil import TimeSeries
 
 from gradient_penalty import calc_gradient_penalty
 

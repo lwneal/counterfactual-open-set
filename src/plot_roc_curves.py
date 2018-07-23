@@ -3,7 +3,7 @@ import numpy as np
 
 import plotting  # init matplotlib
 import matplotlib.pyplot as plt
-from gnomehat.imutil import show
+from imutil import show
 
 output_filename = sys.argv[1]
 

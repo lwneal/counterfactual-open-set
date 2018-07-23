@@ -9,7 +9,7 @@ different array each time to_array is called with the same example
 import os
 import numpy as np
 import random
-from gnomehat import imutil
+import imutil
 
 DATA_DIR = '/mnt/nfs/data'
 

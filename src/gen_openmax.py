@@ -6,7 +6,7 @@ from torch import autograd
 from torch.autograd import Variable
 from torch.nn import functional as F
 from vector import clamp_to_unit_sphere
-from gnomehat import imutil
+import imutil
 
 
 def to_torch(z, requires_grad=False):

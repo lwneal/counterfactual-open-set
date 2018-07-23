@@ -7,8 +7,8 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 from vector import clamp_to_unit_sphere
 
-from gnomehat.series import TimeSeries
-from gnomehat import imutil
+from logutil import TimeSeries
+import imutil
 
 
 def to_torch(z, requires_grad=False):

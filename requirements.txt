@@ -1,4 +1,5 @@
-git+http://github.com/lwneal/gnomehat
+git+http://github.com/lwneal/imutil
+git+http://github.com/lwneal/logutil
 numpy
 scipy
 torch
