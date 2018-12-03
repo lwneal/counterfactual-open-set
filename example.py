@@ -15,6 +15,8 @@ from logutil import TimeSeries
 from datasetutil.dataloader import CustomDataloader
 
 
+CLASSIFIER_EPOCHS = 10
+GENERATIVE_EPOCHS = 10
 BATCH_SIZE = 64
 LATENT_SIZE = 20
 NUM_CLASSES = 10
@@ -113,21 +115,24 @@ class Discriminator(nn.Module):
 def main():
     # Train and test a perfectly normal, ordinary classifier
     classifier = Classifier(num_classes=NUM_CLASSES)
-    train_classifier(classifier, load_training_dataset())
-    test_open_set_performance(classifier)
+    for i in range(CLASSIFIER_EPOCHS):
+        train_classifier(classifier, load_training_dataset())
+        test_open_set_performance(classifier)
 
     # Build a generative model
     encoder = Encoder(latent_size=LATENT_SIZE)
     generator = Generator(latent_size=LATENT_SIZE)
     discriminator = Discriminator()
-    train_generative_model(encoder, generator, discriminator, load_training_dataset())
+    for i in range(GENERATIVE_EPOCHS):
+        train_generative_model(encoder, generator, discriminator, load_training_dataset())
 
     # Generate counterfactual open set images
     open_set_images = generate_counterfactuals(encoder, generator, classifier, load_training_dataset())
 
     # Use counterfactual open set images to re-train the classifier
     augmented_classifier = Classifier(num_classes=11)
-    train_open_set_classifier(augmented_classifier, load_training_dataset(), open_set_images)
+    for i in range(CLASSIFIER_EPOCHS):
+        train_open_set_classifier(augmented_classifier, load_training_dataset(), open_set_images)
 
     # Output ROC curves comparing the methods
     test_open_set_performance(classifier, mode='confidence_threshold')
