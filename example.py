@@ -124,10 +124,12 @@ def main():
     open_set_images = generate_counterfactuals(encoder, generator, classifier, load_training_dataset())
 
     # Use counterfactual open set images to re-train the classifier
-    open_set_classifier = Classifier(num_classes=11)
-    train_open_set_classifier(open_set_classifier, load_training_dataset(), open_set_images)
+    augmented_classifier = Classifier(num_classes=11)
+    train_open_set_classifier(augmented_classifier, load_training_dataset(), open_set_images)
 
-    test_open_set_performance(open_set_classifier, mode='augmented_classifier')
+    # Output ROC curves comparing the methods
+    test_open_set_performance(classifier, mode='confidence_threshold')
+    test_open_set_performance(augmented_classifier, mode='augmented_classifier')
 
 
 def load_training_dataset():
@@ -183,66 +185,6 @@ def test_classifier(classifier, dataset):
         total_correct += correct
     accuracy = float(total_correct) / total
     print('Test Accuracy: {}/{} ({:.03f})'.format(total_correct, total, accuracy))
-
-
-def test_open_set_performance(classifier, mode='confidence_threshold'):
-    known_scores = []
-    for images, labels in load_testing_dataset():
-        preds = classifier(images)
-        known_scores.extend(get_score(preds, mode))
-
-    unknown_scores = []
-    for images, labels in load_open_set():
-        preds = classifier(images)
-        unknown_scores.extend(get_score(preds, mode))
-
-    auc = plot_roc(known_scores, unknown_scores, mode)
-    print('Detecting with mode {}, avg. known-class score: {}, avg unknown score: {}'.format(
-        mode, np.mean(known_scores), np.mean(unknown_scores)))
-    print('Mode {}: generated ROC with AUC score {:.03f}'.format(mode, auc))
-
-
-def plot_roc(known_scores, unknown_scores, mode):
-    from sklearn.metrics import roc_curve, roc_auc_score
-    y_true = np.array([0] * len(known_scores) + [1] * len(unknown_scores))
-    y_score = np.concatenate([known_scores, unknown_scores])
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    auc_score = roc_auc_score(y_true, y_score)
-    title = 'ROC {}: AUC {:.03f}'.format(mode, auc_score)
-    plot = plot_xy(fpr, tpr, x_axis="False Positive Rate", y_axis="True Positive Rate", title=title)
-    filename = 'roc_{}.png'.format(mode)
-    plot.figure.savefig(filename)
-    return auc_score
-
-
-def plot_xy(x, y, x_axis="X", y_axis="Y", title="Plot"):
-    import pandas as pd
-    # Hack to keep matplotlib from crashing when run without X
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-
-    # Apply sane defaults to matplotlib
-    import seaborn as sns
-    sns.set_style('darkgrid')
-
-    # Generate plot
-    df = pd.DataFrame({'x': x, 'y': y})
-    plot = df.plot(x='x', y='y')
-    plot.grid(b=True, which='major')
-    plot.grid(b=True, which='minor')
-    plot.set_title(title)
-    plot.set_ylabel(y_axis)
-    plot.set_xlabel(x_axis)
-    return plot
-
-
-def get_score(preds, mode):
-    if mode == 'confidence_threshold':
-        return torch.max(torch.softmax(preds, dim=1), dim=1)[0].data.cpu().numpy()
-    elif mode == 'augmented_classifier':
-        return torch.softmax(preds, dim=1)[:, -1].data.cpu().numpy()
-    assert False
 
 
 def train_open_set_classifier(classifier, dataset, open_set_images):
@@ -326,6 +268,65 @@ def generate_cf(encoder, generator, classifier, images,
     # Output the generated image as an example "unknown" image
     return generator(z).detach()
 
+
+def test_open_set_performance(classifier, mode='confidence_threshold'):
+    known_scores = []
+    for images, labels in load_testing_dataset():
+        preds = classifier(images)
+        known_scores.extend(get_score(preds, mode))
+
+    unknown_scores = []
+    for images, labels in load_open_set():
+        preds = classifier(images)
+        unknown_scores.extend(get_score(preds, mode))
+
+    auc = plot_roc(known_scores, unknown_scores, mode)
+    print('Detecting with mode {}, avg. known-class score: {}, avg unknown score: {}'.format(
+        mode, np.mean(known_scores), np.mean(unknown_scores)))
+    print('Mode {}: generated ROC with AUC score {:.03f}'.format(mode, auc))
+
+
+def get_score(preds, mode):
+    if mode == 'confidence_threshold':
+        return 1 - torch.max(torch.softmax(preds, dim=1), dim=1)[0].data.cpu().numpy()
+    elif mode == 'augmented_classifier':
+        return torch.softmax(preds, dim=1)[:, -1].data.cpu().numpy()
+    assert False
+
+
+def plot_roc(known_scores, unknown_scores, mode):
+    from sklearn.metrics import roc_curve, roc_auc_score
+    y_true = np.array([0] * len(known_scores) + [1] * len(unknown_scores))
+    y_score = np.concatenate([known_scores, unknown_scores])
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    auc_score = roc_auc_score(y_true, y_score)
+    title = 'ROC {}: AUC {:.03f}'.format(mode, auc_score)
+    plot = plot_xy(fpr, tpr, x_axis="False Positive Rate", y_axis="True Positive Rate", title=title)
+    filename = 'roc_{}.png'.format(mode)
+    plot.figure.savefig(filename)
+    return auc_score
+
+
+def plot_xy(x, y, x_axis="X", y_axis="Y", title="Plot"):
+    import pandas as pd
+    # Hack to keep matplotlib from crashing when run without X
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    # Apply sane defaults to matplotlib
+    import seaborn as sns
+    sns.set_style('darkgrid')
+
+    # Generate plot
+    df = pd.DataFrame({'x': x, 'y': y})
+    plot = df.plot(x='x', y='y')
+    plot.grid(b=True, which='major')
+    plot.grid(b=True, which='minor')
+    plot.set_title(title)
+    plot.set_ylabel(y_axis)
+    plot.set_xlabel(x_axis)
+    return plot
 
 if __name__ == '__main__':
     main()
