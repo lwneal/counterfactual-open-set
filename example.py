@@ -85,7 +85,7 @@ class Generator(nn.Module):
         x = self.conv1(x)
         x = F.leaky_relu(x, 0.2)
         x = self.conv2(x)
-        x = F.sigmoid(x)
+        x = torch.sigmoid(x)
         return x
 
 
@@ -196,9 +196,45 @@ def test_open_set_performance(classifier, mode='confidence_threshold'):
         preds = classifier(images)
         unknown_scores.extend(get_score(preds, mode))
 
-    # TODO: build ROC curve given detection scores
+    auc = plot_roc(known_scores, unknown_scores, mode)
     print('Detecting with mode {}, avg. known-class score: {}, avg unknown score: {}'.format(
         mode, np.mean(known_scores), np.mean(unknown_scores)))
+    print('Mode {}: generated ROC with AUC score {:.03f}'.format(mode, auc))
+
+
+def plot_roc(known_scores, unknown_scores, mode):
+    from sklearn.metrics import roc_curve, roc_auc_score
+    y_true = np.array([0] * len(known_scores) + [1] * len(unknown_scores))
+    y_score = np.concatenate([known_scores, unknown_scores])
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    auc_score = roc_auc_score(y_true, y_score)
+    title = 'ROC {}: AUC {:.03f}'.format(mode, auc_score)
+    plot = plot_xy(fpr, tpr, x_axis="False Positive Rate", y_axis="True Positive Rate", title=title)
+    filename = 'roc_{}.png'.format(mode)
+    plot.figure.savefig(filename)
+    return auc_score
+
+
+def plot_xy(x, y, x_axis="X", y_axis="Y", title="Plot"):
+    import pandas as pd
+    # Hack to keep matplotlib from crashing when run without X
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    # Apply sane defaults to matplotlib
+    import seaborn as sns
+    sns.set_style('darkgrid')
+
+    # Generate plot
+    df = pd.DataFrame({'x': x, 'y': y})
+    plot = df.plot(x='x', y='y')
+    plot.grid(b=True, which='major')
+    plot.grid(b=True, which='minor')
+    plot.set_title(title)
+    plot.set_ylabel(y_axis)
+    plot.set_xlabel(x_axis)
+    return plot
 
 
 def get_score(preds, mode):
@@ -226,7 +262,6 @@ def train_open_set_classifier(classifier, dataset, open_set_images):
         adam.step()
         print('open set classifier loss: {}'.format(loss))
     print('Finished training open-set-augmented classifier')
-
 
 
 def train_generative_model(encoder, generator, discriminator, dataset):
