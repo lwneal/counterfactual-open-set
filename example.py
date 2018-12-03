@@ -16,6 +16,8 @@ from datasetutil.dataloader import CustomDataloader
 
 
 BATCH_SIZE = 64
+LATENT_SIZE = 20
+NUM_CLASSES = 10
 EMNIST_LOCATION = '/mnt/nfs/data/emnist.dataset'
 
 
@@ -110,13 +112,13 @@ class Discriminator(nn.Module):
 
 def main():
     # Train and test a perfectly normal, ordinary classifier
-    classifier = Classifier(num_classes=10)
+    classifier = Classifier(num_classes=NUM_CLASSES)
     train_classifier(classifier, load_training_dataset())
     test_open_set_performance(classifier)
 
     # Build a generative model
-    encoder = Encoder(latent_size=10)
-    generator = Generator(latent_size=10)
+    encoder = Encoder(latent_size=LATENT_SIZE)
+    generator = Generator(latent_size=LATENT_SIZE)
     discriminator = Discriminator()
     train_generative_model(encoder, generator, discriminator, load_training_dataset())
 
@@ -159,7 +161,7 @@ def load_testing_dataset():
 def load_open_set():
     def generator():
         for images, labels in CustomDataloader(EMNIST_LOCATION, fold='test', image_size=28, shuffle=False):
-            labels[:] = 10
+            labels[:] = NUM_CLASSES
             yield torch.Tensor(images).cuda().mean(dim=1).unsqueeze(1), torch.LongTensor(labels).cuda()
     return generator()
 
@@ -207,16 +209,54 @@ def train_open_set_classifier(classifier, dataset, open_set_images):
 
 
 def train_generative_model(encoder, generator, discriminator, dataset):
-    params = [x for x in encoder.parameters()] + [x for x in generator.parameters()]
-    adam = torch.optim.Adam(params)
+    generative_params = [x for x in encoder.parameters()] + [x for x in generator.parameters()]
+    gen_adam = torch.optim.Adam(generative_params, lr=.005)
+    disc_adam = torch.optim.Adam(discriminator.parameters(), lr=.02)
     for images, labels in dataset:
-        adam.zero_grad()
-        mse = (generator(encoder(images)) - images) ** 2
-        loss = torch.mean(mse)
-        loss.backward()
-        print('Autoencoder loss: {:.03f}'.format(loss))
-        adam.step()
-    print('Autoencoder training finished')
+        disc_adam.zero_grad()
+        fake = generator(torch.randn(len(images), LATENT_SIZE).cuda())
+        disc_loss = torch.mean(F.softplus(discriminator(fake)) + F.softplus(-discriminator(images)))
+        disc_loss.backward()
+        gp_loss = calc_gradient_penalty(discriminator, images, fake)
+        gp_loss.backward()
+        disc_adam.step()
+
+        gen_adam.zero_grad()
+        mse_loss = torch.mean((generator(encoder(images)) - images) ** 2)
+        mse_loss.backward()
+        gen_loss = torch.mean(F.softplus(discriminator(images)))
+        print('Autoencoder loss: {:.03f}, Generator loss: {:.03f}, Disc. loss: {:.03f}'.format(
+            mse_loss, gen_loss, disc_loss))
+        gen_adam.step()
+    print('Generative training finished')
+
+
+def calc_gradient_penalty(discriminator, real_data, fake_data, penalty_lambda=10.0):
+    from torch import autograd
+    alpha = torch.rand(real_data.size()[0], 1, 1, 1)
+    alpha = alpha.expand(real_data.size())
+    alpha = alpha.cuda()
+
+    # Traditional WGAN-GP
+    #interpolates = alpha * real_data + (1 - alpha) * fake_data
+    # An alternative approach
+    interpolates = torch.cat([real_data, fake_data])
+    interpolates = interpolates.cuda()
+    interpolates = autograd.Variable(interpolates, requires_grad=True)
+
+    disc_interpolates = discriminator(interpolates)
+
+    ones = torch.ones(disc_interpolates.size()).cuda()
+    gradients = autograd.grad(
+            outputs=disc_interpolates,
+            inputs=interpolates,
+            grad_outputs=ones,
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
+
+    penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * penalty_lambda
+    return penalty
 
 
 def generate_counterfactuals(encoder, generator, classifier, dataset):
@@ -225,6 +265,7 @@ def generate_counterfactuals(encoder, generator, classifier, dataset):
         counterfactuals = generate_cf( encoder, generator, classifier, images)
         cf_open_set_images.append(counterfactuals)
     print("Generated {} batches of counterfactual images".format(len(cf_open_set_images)))
+    imutil.show(counterfactuals, filename='example_counterfactuals.jpg', img_padding=8)
     return cf_open_set_images
 
 
