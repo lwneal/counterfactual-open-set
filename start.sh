@@ -2,26 +2,28 @@
 # Break on any error
 set -e
 
+DATASET_DIR=data/
+
 # Download any datasets not currently available
 # TODO: do this in python, based on --dataset
-#if [ ! -f /mnt/data/svhn-split0a.dataset ]; then
-#    python src/datasets/download_svhn.py
-#fi
-if [ ! -f /mnt/data/cifar10-split0a.dataset ]; then
-    python src/datasets/download_cifar10.py
+if [ ! -f $DATASET_DIR/svhn-split0a.dataset ]; then
+    python generativeopenset/datasets/download_svhn.py
 fi
-#if [ ! -f /mnt/data/mnist-split0a.dataset ]; then
-#    python src/datasets/download_mnist.py
-#fi
-#if [ ! -f /mnt/data/oxford102.dataset ]; then
-#    python src/datasets/download_oxford102.py
-#fi
-#if [ ! -f /mnt/data/celeba.dataset ]; then
-#    python src/datasets/download_celeba.py
-#fi
-#if [ ! -f /mnt/data/cifar100-animals.dataset ]; then
-#    python src/datasets/download_cifar100.py
-#fi
+if [ ! -f $DATASET_DIR/cifar10-split0a.dataset ]; then
+    python generativeopenset/datasets/download_cifar10.py
+fi
+if [ ! -f $DATASET_DIR/mnist-split0a.dataset ]; then
+    python generativeopenset/datasets/download_mnist.py
+fi
+if [ ! -f $DATASET_DIR/oxford102.dataset ]; then
+    python generativeopenset/datasets/download_oxford102.py
+fi
+if [ ! -f $DATASET_DIR/celeba.dataset ]; then
+    python generativeopenset/datasets/download_celeba.py
+fi
+if [ ! -f $DATASET_DIR/cifar100-animals.dataset ]; then
+    python generativeopenset/datasets/download_cifar100.py
+fi
 
 # Hyperparameters
 GAN_EPOCHS=30
